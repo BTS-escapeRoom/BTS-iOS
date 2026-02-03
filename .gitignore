@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+*.xcbkptlist
+*.xccheckout
+
+# Build products
+DerivedData/
+.build/
+
+# SwiftPM (Xcode-generated)
+.swiftpm/
+Packages/
+
+# Logs
+*.log
