@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "appleid_button.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
