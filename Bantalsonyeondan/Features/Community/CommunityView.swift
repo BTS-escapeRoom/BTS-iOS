@@ -4,7 +4,6 @@ import ComposableArchitecture
 struct CommunityView: View {
     let store: StoreOf<CommunityFeature>
     @FocusState private var isSearchFocused: Bool
-    @State private var sortOption: SortOption = .latest
     
     var body: some View {
         NavigationStack {
@@ -15,7 +14,7 @@ struct CommunityView: View {
                             CustomSearchBar(
                                 text: viewStore.binding(
                                     get: \.searchText,
-                                    send: { CommunityFeature.Action.onSearchBarEntered($0, sortOption: sortOption) }
+                                    send: CommunityFeature.Action.onSearchBarEntered
                                 ),
                                 placeholder: "모집글, 업체명, 키워드 검색"
                             )
@@ -36,13 +35,12 @@ struct CommunityView: View {
                             Menu {
                                 ForEach(SortOption.communityOptions) { option in
                                     Button(option.displayName) {
-                                        sortOption = option
                                         viewStore.send(CommunityFeature.Action.onSortOptionSelected(option))
                                     }
                                 }
                             } label: {
                                 HStack(spacing: 4) {
-                                    Text(sortOption.displayName)
+                                    Text(viewStore.sortOption.displayName)
                                         .font(.subheadline)
                                         .tint(Color("cod_gray"))
                                     Image("polygon")
@@ -95,7 +93,7 @@ struct CommunityView: View {
                                         .buttonStyle(.plain)
                                         .onAppear {
                                             if index == viewStore.boards.count - 1 && !viewStore.isLoading {
-                                                viewStore.send(CommunityFeature.Action.onLoadNextPage(sortOption: sortOption))
+                                                viewStore.send(CommunityFeature.Action.onLoadNextPage)
                                             }
                                         }
                                     }
@@ -110,9 +108,9 @@ struct CommunityView: View {
                             }
                         }
                     }
-                    .onAppear { viewStore.send(CommunityFeature.Action.onLoadNextPage(sortOption: sortOption)) }
+                    .onAppear { viewStore.send(CommunityFeature.Action.onLoadNextPage) }
                     .fullScreenCover(isPresented: viewStore.binding(get: \.showWriteView, send: CommunityFeature.Action.showWriteView)) {
-                        viewStore.send(CommunityFeature.Action.onLoadNextPage(sortOption: sortOption))
+                        viewStore.send(CommunityFeature.Action.onLoadNextPage)
                     } content: {
                         CommunityWriteView()
                     }
@@ -139,6 +137,23 @@ struct CommunityView: View {
                         .foregroundStyle(.clear)
                     }
                     .zIndex(1)
+                }
+                .alert(
+                    "오류",
+                    isPresented: Binding(
+                        get: { viewStore.errorMessage != nil },
+                        set: { isPresented in
+                            if !isPresented {
+                                viewStore.send(.clearErrorMessage)
+                            }
+                        }
+                    )
+                ) {
+                    Button("확인", role: .cancel) {
+                        viewStore.send(.clearErrorMessage)
+                    }
+                } message: {
+                    Text(viewStore.errorMessage ?? "")
                 }
             }
         }

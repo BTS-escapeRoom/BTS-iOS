@@ -12,12 +12,13 @@ struct HomeFeature: Reducer {
     struct State: Equatable {
         var themes: [Theme] = []
         var isLoading: Bool = false
+        var errorMessage: String? = nil
     }
     
     enum Action {
         case onAppear
         case fetchThemesResponse(Result<[Theme], Error>)
-//        case fetchThemeResponse(Result<Theme, Error>)
+        case clearErrorMessage
     }
     
     @Dependency(\.themeAPIClient) var themeApiClient
@@ -26,6 +27,7 @@ struct HomeFeature: Reducer {
         switch action {
         case .onAppear:
             state.isLoading = true
+            state.errorMessage = nil
             return .run { send in
                 do {
                     let themes = try await themeApiClient.fetchThemesRecent()
@@ -37,12 +39,16 @@ struct HomeFeature: Reducer {
         case let .fetchThemesResponse(.success(themes)):
             state.isLoading = false
             state.themes = themes
+            state.errorMessage = nil
             return .none
+
         case let .fetchThemesResponse(.failure(error)):
             state.isLoading = false
-#if DEBUG
-            print("Error: \(error)")
-#endif
+            state.errorMessage = error.localizedDescription
+            return .none
+
+        case .clearErrorMessage:
+            state.errorMessage = nil
             return .none
         }
     }

@@ -3,6 +3,8 @@ import Foundation
 
 // MARK: - State
 struct CommunityFeature: Reducer {
+    private enum CancelID { case search }
+
     struct State: Equatable {
         var searchText: String = ""
         var boards: [Board] = []
@@ -12,41 +14,49 @@ struct CommunityFeature: Reducer {
         var sortOption: SortOption = .latest
         var showWriteView: Bool = false
         var isOnlyRecruiting: Bool = true
+        var errorMessage: String? = nil
     }
 
     enum Action {
         case fetchBoardsResponse(Result<BoardResponse, Error>, requestedPage: Int)
-        case onSearchBarEntered(String, sortOption: SortOption)
+        case onSearchBarEntered(String)
         case onSortOptionSelected(SortOption)
-        case onLoadNextPage(sortOption: SortOption)
+        case onLoadNextPage
         case setOnlyRecruiting(Bool)
         case showWriteView(Bool)
+        case clearErrorMessage
     }
 
     @Dependency(\.boardAPIClient) var boardApiClient
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
         switch action {
-        case let .onSearchBarEntered(keyword, sortOption):
+        case let .onSearchBarEntered(keyword):
+            state.searchText = keyword
             state.isLoading = true
-            let currentKeyword = keyword.isEmpty ? nil : keyword
-            let currentSortOption = sortOption
+            state.errorMessage = nil
+            let currentKeyword = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
+            let currentSortOption = state.sortOption
             let requestedPage = 1
             let typeFilter = state.isOnlyRecruiting ? "recruit" : nil
             return .run { send in
                 do {
+                    try await Task.sleep(for: .milliseconds(300))
                     let boardRequest = BoardRequest(
-                        keyword: currentKeyword,
+                        keyword: currentKeyword.isEmpty ? nil : currentKeyword,
                         type: typeFilter,
                         sortType: currentSortOption,
                         page: requestedPage
                     )
                     let boardResponse = try await boardApiClient.getBoards(boardRequest)
                     await send(.fetchBoardsResponse(.success(boardResponse), requestedPage: requestedPage))
+                } catch is CancellationError {
+                    return
                 } catch {
                     await send(.fetchBoardsResponse(.failure(error), requestedPage: requestedPage))
                 }
             }
+            .cancellable(id: CancelID.search, cancelInFlight: true)
 
         case let .fetchBoardsResponse(result, requestedPage):
             state.isLoading = false
@@ -59,27 +69,27 @@ struct CommunityFeature: Reducer {
                 }
                 state.nextPage = boardResponse.nextPage
                 state.totalPage = boardResponse.totalPage
+                state.errorMessage = nil
             case .failure(let error):
-                print(error)
-                break
+                state.errorMessage = error.localizedDescription
             }
             return .none
 
         case let .onSortOptionSelected(option):
             state.sortOption = option
-            return .send(.onSearchBarEntered(state.searchText, sortOption: option))
+            return .send(.onSearchBarEntered(state.searchText))
 
-        case let .onLoadNextPage(sortOption):
+        case .onLoadNextPage:
             guard state.nextPage > 0, state.isLoading == false else { return .none }
             state.isLoading = true
-            let currentKeyword = state.searchText.isEmpty ? nil : state.searchText
-            let currentSortOption = sortOption
+            let currentKeyword = state.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            let currentSortOption = state.sortOption
             let currentPage = state.nextPage
             let typeFilter = state.isOnlyRecruiting ? "recruit" : nil
             return .run { send in
                 do {
                     let boardResponse = try await boardApiClient.getBoards(
-                        BoardRequest(keyword: currentKeyword, type: typeFilter, sortType: currentSortOption, page: currentPage)
+                        BoardRequest(keyword: currentKeyword.isEmpty ? nil : currentKeyword, type: typeFilter, sortType: currentSortOption, page: currentPage)
                     )
                     await send(.fetchBoardsResponse(.success(boardResponse), requestedPage: currentPage))
                 } catch {
@@ -92,10 +102,14 @@ struct CommunityFeature: Reducer {
             // Reset and reload from page 1 with current filters
             state.nextPage = 1
             state.boards = []
-            return .send(.onSearchBarEntered(state.searchText, sortOption: state.sortOption))
+            return .send(.onSearchBarEntered(state.searchText))
 
         case let .showWriteView(show):
             state.showWriteView = show
+            return .none
+
+        case .clearErrorMessage:
+            state.errorMessage = nil
             return .none
         }
     }

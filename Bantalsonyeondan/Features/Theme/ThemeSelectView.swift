@@ -5,10 +5,9 @@ struct ThemeSelectView: View {
     let store: StoreOf<ThemeFeature>
     @Binding var selectedTheme: Theme?
     @Environment(\.dismiss) private var dismiss
-    @State private var searchText: String = ""
 
     var body: some View {
-        WithViewStore(store, observe: \ .self) { viewStore in
+        WithViewStore(store, observe: \.self) { viewStore in
             VStack(spacing: 0) {
                 // 상단 바
                 HStack {
@@ -23,14 +22,10 @@ struct ThemeSelectView: View {
                     }
                 }
                 // 검색창
-                let currentSortOption = viewStore.sortOption
                 CustomSearchBar(
-                    text: Binding(
-                        get: { searchText },
-                        set: { newValue in
-                            searchText = newValue
-                            viewStore.send(.onSearchBarEntered(newValue, sortOption: currentSortOption))
-                        }
+                    text: viewStore.binding(
+                        get: \.searchText,
+                        send: ThemeFeature.Action.onSearchBarEntered
                     ),
                     placeholder: "테마명, 지역명 검색"
                 )
@@ -44,7 +39,7 @@ struct ThemeSelectView: View {
                     Spacer()
                 } else if viewStore.themes.isEmpty {
                     Spacer()
-                    Text(searchText.isEmpty ? "연결할 테마를 검색해주세요." : "'\(searchText)'에 대한 검색 결과가 없습니다.")
+                    Text(viewStore.searchText.isEmpty ? "연결할 테마를 검색해주세요." : "'\(viewStore.searchText)'에 대한 검색 결과가 없습니다.")
                         .foregroundColor(.gray)
                         .font(.subheadline)
                     Spacer()

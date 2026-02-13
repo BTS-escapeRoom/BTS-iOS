@@ -10,27 +10,28 @@ import ComposableArchitecture
 
 struct ThemeView: View {
     let store: StoreOf<ThemeFeature>
-    
-    @State private var searchText: String = ""
-    //    @State private var themes: [Theme] = []
-    @State private var sortOption: SortOption = .distance
-    
+
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             VStack {
-                CustomSearchBar(text: $searchText, placeholder: "원하는 테마 또는 업체명 검색")
+                CustomSearchBar(
+                    text: viewStore.binding(
+                        get: \.searchText,
+                        send: ThemeFeature.Action.onSearchBarEntered
+                    ),
+                    placeholder: "원하는 테마 또는 업체명 검색"
+                )
                     .padding(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 Divider()
                 Menu {
                     ForEach(SortOption.themeOptions) { option in
                         Button(option.displayName) {
-                            sortOption = option
                             viewStore.send(.onSortOptionSelected(option))
                         }
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Text(sortOption.displayName)
+                        Text(viewStore.sortOption.displayName)
                             .font(.subheadline)
                             .tint(Color("cod_gray"))
                         Image("polygon")
@@ -39,23 +40,28 @@ struct ThemeView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.horizontal, 16)
                 Spacer()
-                if viewStore.isLoading {
+                if viewStore.themes.isEmpty && viewStore.isLoading {
                     ProgressView("Loading...")
                     Spacer()
                 } else {
-                    ThemeGridView(themes: viewStore.themes, onTap: { themeId in
-                        viewStore.send(.themeTapped(themeId: themeId))
-                    }, loadNextPage: {
-                        viewStore.send(.onLoadNextPage(sortOption: sortOption))
-                    })
+                    ThemeGridView(
+                        themes: viewStore.themes,
+                        isLoadingNextPage: viewStore.isLoading && !viewStore.themes.isEmpty,
+                        resetKey: "\(viewStore.sortOption.rawValue)|\(viewStore.searchText)",
+                        onTap: { themeId in
+                            viewStore.send(.themeTapped(themeId: themeId))
+                        },
+                        loadNextPage: {
+                            viewStore.send(.onLoadNextPage)
+                        }
+                    )
                 }
                 
             }
             .onAppear {
-                viewStore.send(.onSortOptionSelected(sortOption))
-            }
-            .onChange(of: searchText) { newValue in
-                viewStore.send(.onSearchBarEntered(newValue, sortOption: sortOption))
+                if viewStore.themes.isEmpty {
+                    viewStore.send(.onSortOptionSelected(viewStore.sortOption))
+                }
             }
             .sheet(item: viewStore.binding(
                 get: \.selectedThemeDetail,
@@ -72,18 +78,39 @@ struct ThemeView: View {
                     // Fallback on earlier versions
                 }
             }
+            .alert(
+                "오류",
+                isPresented: Binding(
+                    get: { viewStore.errorMessage != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            viewStore.send(.clearErrorMessage)
+                        }
+                    }
+                )
+            ) {
+                Button("확인", role: .cancel) {
+                    viewStore.send(.clearErrorMessage)
+                }
+            } message: {
+                Text(viewStore.errorMessage ?? "")
+            }
         }
     }
 }
 
 struct ThemeGridView: View {
     let themes: [Theme]
+    let isLoadingNextPage: Bool
+    let resetKey: String
     let onTap: (_ themeId: Int) -> Void
     let loadNextPage: () -> Void
+    @State private var maxVisibleIndex: Int = -1
     
     private let columns = [
         GridItem(.adaptive(minimum: 150), spacing: 16)
     ]
+    private let prefetchRemainingItemCount = 4
     
     var body: some View {
         ScrollView {
@@ -91,9 +118,9 @@ struct ThemeGridView: View {
                 ForEach(Array(themes.enumerated()), id:\.offset) { index, theme in
                     ThemeCardView(theme: theme)
                         .onAppear {
-                            if index == themes.count - 5 {
-                                loadNextPage()
-                            }
+                            guard index > maxVisibleIndex else { return }
+                            maxVisibleIndex = index
+                            requestNextPageIfNeeded()
                         }
                         .onTapGesture {
                             onTap(theme.id)
@@ -101,7 +128,27 @@ struct ThemeGridView: View {
                 }
             }
             .padding(16)
+            
+            if isLoadingNextPage {
+                ProgressView()
+                    .padding(.bottom, 16)
+            }
         }
+        .onChange(of: resetKey) { _ in
+            maxVisibleIndex = -1
+        }
+        .onChange(of: themes.count) { newCount in
+            if maxVisibleIndex >= newCount {
+                maxVisibleIndex = -1
+            }
+        }
+    }
+    
+    private func requestNextPageIfNeeded() {
+        guard !themes.isEmpty else { return }
+        let triggerIndex = max(0, themes.count - prefetchRemainingItemCount)
+        guard maxVisibleIndex >= triggerIndex else { return }
+        loadNextPage()
     }
 }
 
@@ -195,7 +242,7 @@ enum SortOption: String, CaseIterable, Identifiable, Encodable {
     
     // ThemeView에서 사용할 옵션 (오래된순 제외)
     static var themeOptions: [SortOption] {
-        [.distance, .popularity, .latest]
+        [.distance, .popular, .latest]
     }
     // CommunityView에서 사용할 옵션 (거리순 제외)
     static var communityOptions: [SortOption] {
