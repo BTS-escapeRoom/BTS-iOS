@@ -66,6 +66,20 @@ struct ReviewAPIClient: APIClient {
     func  getMyReviews() async throws -> [Review] {
         try await request("reviews/me")
     }
+
+    /// GET /v1/reviews/history/{memberId} 방탈출 기록 조회
+    func getHistory(memberId: Int) async throws -> [ReviewHistory] {
+        try await request("reviews/history/\(memberId)")
+    }
+
+    /// PUT /v1/reviews/history-display 방탈출 기록 노출 정보 수정
+    func updateHistoryDisplay(reviewIds: [Int]) async throws -> String {
+        try await request(
+            "reviews/history-display",
+            method: "PUT",
+            query: ["reviewIds": reviewIds]
+        )
+    }
 }
 
 //MARK: 회원 API

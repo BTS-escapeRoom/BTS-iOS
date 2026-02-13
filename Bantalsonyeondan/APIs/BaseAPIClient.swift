@@ -56,7 +56,12 @@ extension BaseAPIClientProtocol {
         // 2) 쿼리 파라미터 추가
         if let query = query {
             let params = try query.asDictionary()
-            urlComponents.queryItems = params.map { URLQueryItem(name: $0.key, value: String(describing:$0.value)) }
+            urlComponents.queryItems = params.flatMap { key, value in
+                if let values = value as? [Any] {
+                    return values.map { URLQueryItem(name: key, value: String(describing: $0)) }
+                }
+                return [URLQueryItem(name: key, value: String(describing: value))]
+            }
         }
         
         guard let finalURL = urlComponents.url else {

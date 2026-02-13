@@ -37,3 +37,35 @@ struct ReviewRegist: Encodable, Decodable, Equatable {
     let themeId: Int
 }
 
+struct ReviewHistory: Decodable, Equatable, Identifiable {
+    let reviewId: Int
+    let storeName: String
+    let themeTitle: String
+    let time: Int
+    let isSuccess: Bool
+    var isDisplay: Bool
+    let canUpdateDisplay: Bool
+
+    var id: Int { reviewId }
+
+    private enum CodingKeys: String, CodingKey {
+        case reviewId
+        case storeName
+        case themeTitle
+        case time
+        case isSuccess
+        case isDisplay
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.reviewId = try container.decode(Int.self, forKey: .reviewId)
+        self.storeName = try container.decode(String.self, forKey: .storeName)
+        self.themeTitle = try container.decode(String.self, forKey: .themeTitle)
+        self.time = try container.decodeIfPresent(Int.self, forKey: .time) ?? 0
+        self.isSuccess = try container.decode(Bool.self, forKey: .isSuccess)
+        let decodedIsDisplay = try container.decodeIfPresent(Bool.self, forKey: .isDisplay)
+        self.isDisplay = decodedIsDisplay ?? false
+        self.canUpdateDisplay = decodedIsDisplay != nil
+    }
+}
