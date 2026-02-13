@@ -57,6 +57,24 @@ struct ReviewHistory: Decodable, Equatable, Identifiable {
         case isDisplay
     }
 
+    init(
+        reviewId: Int,
+        storeName: String,
+        themeTitle: String,
+        time: Int,
+        isSuccess: Bool,
+        isDisplay: Bool,
+        canUpdateDisplay: Bool = true
+    ) {
+        self.reviewId = reviewId
+        self.storeName = storeName
+        self.themeTitle = themeTitle
+        self.time = time
+        self.isSuccess = isSuccess
+        self.isDisplay = isDisplay
+        self.canUpdateDisplay = canUpdateDisplay
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.reviewId = try container.decode(Int.self, forKey: .reviewId)
