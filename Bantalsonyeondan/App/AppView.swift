@@ -126,13 +126,13 @@ struct AppView: View {
               )
             )
         case .myPage:
-                            LoginView()
-//            MyView(
-//                store: StoreOf<MyFeature>(
-//                initialState: MyFeature.State(),
-//                reducer: { MyFeature() }
-//              )
-//            )
+//                            LoginView()
+            MyView(
+                store: StoreOf<MyFeature>(
+                initialState: MyFeature.State(),
+                reducer: { MyFeature() }
+              )
+            )
         }
     }
 }

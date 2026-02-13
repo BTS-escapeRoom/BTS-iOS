@@ -51,8 +51,10 @@
 		517F13EE2CD1287C0061F8A7 /* UserApiType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517F13ED2CD1287C0061F8A7 /* UserApiType.swift */; };
 		517F13F22CD128A90061F8A7 /* LoginFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517F13F12CD128A90061F8A7 /* LoginFeature.swift */; };
 		517F13F42CD128B80061F8A7 /* UserApi+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517F13F32CD128B80061F8A7 /* UserApi+Combine.swift */; };
+		517F60FE2F32581F00A3880C /* Galmuri9.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 517F60FD2F32581F00A3880C /* Galmuri9.ttf */; };
 		518390062E5F36D20083B7F9 /* CommunityWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 518390052E5F36D20083B7F9 /* CommunityWriteView.swift */; };
 		51A0CBD22EE0606600BC8E73 /* AppleSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0CBD12EE0606600BC8E73 /* AppleSignInManager.swift */; };
+		51A0DAD42F3254E70009F19C /* RecordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0DAD32F3254E70009F19C /* RecordsView.swift */; };
 		51A4EECC2E27D27B0065D460 /* ReviewWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A4EECB2E27D27B0065D460 /* ReviewWriteView.swift */; };
 		51B64E0C2E68724B00696BDF /* ThemeSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B64E0B2E68724B00696BDF /* ThemeSelectView.swift */; };
 		51C00D042E1E91F0006CCA3C /* ReviewFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C00D022E1E91F0006CCA3C /* ReviewFeature.swift */; };
@@ -130,9 +132,11 @@
 		517F13ED2CD1287C0061F8A7 /* UserApiType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserApiType.swift; sourceTree = "<group>"; };
 		517F13F12CD128A90061F8A7 /* LoginFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginFeature.swift; sourceTree = "<group>"; };
 		517F13F32CD128B80061F8A7 /* UserApi+Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserApi+Combine.swift"; sourceTree = "<group>"; };
+		517F60FD2F32581F00A3880C /* Galmuri9.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Galmuri9.ttf; sourceTree = "<group>"; };
 		518390052E5F36D20083B7F9 /* CommunityWriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityWriteView.swift; sourceTree = "<group>"; };
 		5190FA062EB24629006A0BD1 /* BantalsonyeondanDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BantalsonyeondanDebug.entitlements; sourceTree = "<group>"; };
 		51A0CBD12EE0606600BC8E73 /* AppleSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInManager.swift; sourceTree = "<group>"; };
+		51A0DAD32F3254E70009F19C /* RecordsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordsView.swift; sourceTree = "<group>"; };
 		51A4EECB2E27D27B0065D460 /* ReviewWriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewWriteView.swift; sourceTree = "<group>"; };
 		51B64E0B2E68724B00696BDF /* ThemeSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSelectView.swift; sourceTree = "<group>"; };
 		51C00D022E1E91F0006CCA3C /* ReviewFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewFeature.swift; sourceTree = "<group>"; };
@@ -188,6 +192,7 @@
 		515857C22E9FBD73002ACE2C /* My */ = {
 			isa = PBXGroup;
 			children = (
+				51A0DAD32F3254E70009F19C /* RecordsView.swift */,
 				515857C32E9FBD8B002ACE2C /* MyView.swift */,
 				515857C52E9FBDE3002ACE2C /* MyFeature.swift */,
 			);
@@ -230,6 +235,7 @@
 				517F13EC2CD128380061F8A7 /* Extensions */,
 				515D6A9C2C5A52F700D6616E /* BantalsonyeondanApp.swift */,
 				515D6AA02C5A52F800D6616E /* Assets.xcassets */,
+				517F60FD2F32581F00A3880C /* Galmuri9.ttf */,
 				515D6AA22C5A52F800D6616E /* Preview Content */,
 			);
 			path = Bantalsonyeondan;
@@ -498,6 +504,7 @@
 			files = (
 				514138352EC4B1D40047BAF4 /* LaunchScreen.storyboard in Resources */,
 				515D6AA42C5A52F800D6616E /* Preview Assets.xcassets in Resources */,
+				517F60FE2F32581F00A3880C /* Galmuri9.ttf in Resources */,
 				515D6AA12C5A52F800D6616E /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -532,6 +539,7 @@
 				51B64E0C2E68724B00696BDF /* ThemeSelectView.swift in Sources */,
 				51619C9A2D787E9D00E8E866 /* TestView.swift in Sources */,
 				515857C62E9FBDE3002ACE2C /* MyFeature.swift in Sources */,
+				51A0DAD42F3254E70009F19C /* RecordsView.swift in Sources */,
 				515857CF2E9FD83B002ACE2C /* ThemeDetailRouteView.swift in Sources */,
 				51DF46B32DE733CC00FA49EB /* LocationManager.swift in Sources */,
 				51619C952D6601AB00E8E866 /* APIConfig.swift in Sources */,
