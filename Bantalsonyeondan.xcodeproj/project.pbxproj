@@ -25,7 +25,6 @@
 		515D6AAE2C5A52F800D6616E /* BantalsonyeondanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515D6AAD2C5A52F800D6616E /* BantalsonyeondanTests.swift */; };
 		515D6AB82C5A52F800D6616E /* BantalsonyeondanUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515D6AB72C5A52F800D6616E /* BantalsonyeondanUITests.swift */; };
 		515D6ABA2C5A52F800D6616E /* BantalsonyeondanUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515D6AB92C5A52F800D6616E /* BantalsonyeondanUITestsLaunchTests.swift */; };
-		516086A02CE4C7AF0094EAC9 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 5160869F2CE4C7AF0094EAC9 /* ComposableArchitecture */; };
 		516086A32CE4CAEA0094EAC9 /* NicknameSetupedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516086A22CE4CAEA0094EAC9 /* NicknameSetupedView.swift */; };
 		516086A52CE4CB000094EAC9 /* NicknameSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516086A42CE4CB000094EAC9 /* NicknameSetupView.swift */; };
 		516086A92D37E39A0094EAC9 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516086A82D37E39A0094EAC9 /* Theme.swift */; };
@@ -55,7 +54,6 @@
 		518390062E5F36D20083B7F9 /* CommunityWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 518390052E5F36D20083B7F9 /* CommunityWriteView.swift */; };
 		51A0CBD22EE0606600BC8E73 /* AppleSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0CBD12EE0606600BC8E73 /* AppleSignInManager.swift */; };
 		51A4EECC2E27D27B0065D460 /* ReviewWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A4EECB2E27D27B0065D460 /* ReviewWriteView.swift */; };
-		51AAA6942E310EA800ABFB57 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 51AAA6932E310EA800ABFB57 /* Inject */; };
 		51B64E0C2E68724B00696BDF /* ThemeSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B64E0B2E68724B00696BDF /* ThemeSelectView.swift */; };
 		51C00D042E1E91F0006CCA3C /* ReviewFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C00D022E1E91F0006CCA3C /* ReviewFeature.swift */; };
 		51C00D082E1E9726006CCA3C /* ReviewDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C00D072E1E9726006CCA3C /* ReviewDetailView.swift */; };
@@ -64,6 +62,7 @@
 		51DF46AD2DAFDD2600FA49EB /* ThemeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46A92DAFDD2600FA49EB /* ThemeFeature.swift */; };
 		51DF46B12DAFFF3300FA49EB /* CustomSearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46B02DAFFF3300FA49EB /* CustomSearchBar.swift */; };
 		51DF46B32DE733CC00FA49EB /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46B22DE733CC00FA49EB /* LocationManager.swift */; };
+		51F384082F3F8A790096FA69 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 51F384072F3F8A790096FA69 /* ComposableArchitecture */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -152,8 +151,7 @@
 			files = (
 				5174A71A2C6390C7008A4BB8 /* NaverThirdPartyLogin in Frameworks */,
 				5174A7162C5A5EAD008A4BB8 /* KakaoSDK in Frameworks */,
-				516086A02CE4C7AF0094EAC9 /* ComposableArchitecture in Frameworks */,
-				51AAA6942E310EA800ABFB57 /* Inject in Frameworks */,
+				51F384082F3F8A790096FA69 /* ComposableArchitecture in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -403,8 +401,7 @@
 			packageProductDependencies = (
 				5174A7152C5A5EAD008A4BB8 /* KakaoSDK */,
 				5174A7192C6390C7008A4BB8 /* NaverThirdPartyLogin */,
-				5160869F2CE4C7AF0094EAC9 /* ComposableArchitecture */,
-				51AAA6932E310EA800ABFB57 /* Inject */,
+				51F384072F3F8A790096FA69 /* ComposableArchitecture */,
 			);
 			productName = Bantalsonyeondan;
 			productReference = 515D6A992C5A52F700D6616E /* Bantalsonyeondan.app */;
@@ -481,8 +478,7 @@
 			packageReferences = (
 				515D6AC72C5A578300D6616E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
 				5174A7172C6390A8008A4BB8 /* XCRemoteSwiftPackageReference "naveridlogin-sdk-ios" */,
-				5160869E2CE4C7AF0094EAC9 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
-				51AAA6922E310EA800ABFB57 /* XCRemoteSwiftPackageReference "Inject" */,
+				51F384062F3F8A790096FA69 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 			);
 			productRefGroup = 515D6A9A2C5A52F700D6616E /* Products */;
 			projectDirPath = "";
@@ -929,14 +925,6 @@
 				kind = branch;
 			};
 		};
-		5160869E2CE4C7AF0094EAC9 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.16.0;
-			};
-		};
 		5174A7172C6390A8008A4BB8 /* XCRemoteSwiftPackageReference "naveridlogin-sdk-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/naver/naveridlogin-sdk-ios";
@@ -945,12 +933,12 @@
 				kind = branch;
 			};
 		};
-		51AAA6922E310EA800ABFB57 /* XCRemoteSwiftPackageReference "Inject" */ = {
+		51F384062F3F8A790096FA69 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/krzysztofzablocki/Inject.git";
+			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.2;
+				minimumVersion = 1.23.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -960,11 +948,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 515D6AC72C5A578300D6616E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
 			productName = KakaoSDK;
-		};
-		5160869F2CE4C7AF0094EAC9 /* ComposableArchitecture */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5160869E2CE4C7AF0094EAC9 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
-			productName = ComposableArchitecture;
 		};
 		5174A7152C5A5EAD008A4BB8 /* KakaoSDK */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -976,10 +959,10 @@
 			package = 5174A7172C6390A8008A4BB8 /* XCRemoteSwiftPackageReference "naveridlogin-sdk-ios" */;
 			productName = NaverThirdPartyLogin;
 		};
-		51AAA6932E310EA800ABFB57 /* Inject */ = {
+		51F384072F3F8A790096FA69 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 51AAA6922E310EA800ABFB57 /* XCRemoteSwiftPackageReference "Inject" */;
-			productName = Inject;
+			package = 51F384062F3F8A790096FA69 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			productName = ComposableArchitecture;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
