@@ -48,7 +48,13 @@ struct BoardDetailView: View {
                 .buttonStyle(.plain)
             } else if let tid = viewStore.detail?.id { // themeId가 사실 id인 케이스 대응
                 NavigationLink {
-                    ThemeDetailRouteView(themeId: tid)
+                    ThemeDetailRouteView(
+                        store: Store(
+                            initialState: ThemeDetailRouteFeature.State(themeId: tid)
+                        ) {
+                            ThemeDetailRouteFeature()
+                        }
+                    )
                 } label: {
                     HStack(spacing: 8) {
                         TagPill(text: viewStore.board?.themeName ?? "")

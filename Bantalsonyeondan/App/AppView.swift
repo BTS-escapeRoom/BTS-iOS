@@ -14,7 +14,7 @@ import AuthenticationServices
 import NaverThirdPartyLogin
 
 struct AppView: View {
-    var store: StoreOf<AppFeature>
+    let store: StoreOf<AppFeature>
     
     init(store: StoreOf<AppFeature>) {
         self.store = store
@@ -22,9 +22,9 @@ struct AppView: View {
     }
     
     var body: some View {
-        WithViewStore(store, observe: { $0 }) { viewStore in
+        WithViewStore(store, observe: \.selectedTab) { viewStore in
             VStack {
-                contentForSelectedTab(viewStore.selectedTab)
+                contentForSelectedTab(viewStore.state)
                 Divider()
             }
             .safeAreaInset(edge: .bottom) {
@@ -54,20 +54,20 @@ struct AppView: View {
     }
     
     struct BottomToolBar: View {
-        var store: StoreOf<AppFeature>
+        let store: StoreOf<AppFeature>
         
         var body: some View {
-            WithViewStore(store, observe: { $0 }) { viewStore in
+            WithViewStore(store, observe: \.selectedTab) { viewStore in
                 HStack {
                     Button {
                         viewStore.send(.selectTab(.theme))
                     } label: {
                         VStack(spacing: 2) {
-                            Image(viewStore.selectedTab == .theme
+                            Image(viewStore.state == .theme
                                   ? "icon-theme-selected" : "icon-theme")
                             Text("테마")
                                 .foregroundColor(
-                                    viewStore.selectedTab == .theme
+                                    viewStore.state == .theme
                                     ? .black : .gray
                                 )
                         }
@@ -78,11 +78,11 @@ struct AppView: View {
                         viewStore.send(.selectTab(.community))
                     } label: {
                         VStack(spacing: 2) {
-                            Image(viewStore.selectedTab == .community
+                            Image(viewStore.state == .community
                                   ? "icon-community-selected" : "icon-community")
                             Text("커뮤니티")
                                 .foregroundColor(
-                                    viewStore.selectedTab == .community
+                                    viewStore.state == .community
                                     ? .black : .gray
                                 )
                         }
@@ -93,11 +93,11 @@ struct AppView: View {
                         viewStore.send(.selectTab(.myPage))
                     } label: {
                         VStack(spacing: 2) {
-                            Image(viewStore.selectedTab == .myPage
+                            Image(viewStore.state == .myPage
                                   ? "icon-my-selected" : "icon-my")
                             Text("나의 탈출")
                                 .foregroundColor(
-                                    viewStore.selectedTab == .myPage
+                                    viewStore.state == .myPage
                                     ? .black : .gray
                                 )
                         }
@@ -112,26 +112,15 @@ struct AppView: View {
         switch tab {
         case .theme:
             ThemeView(
-                store: StoreOf<ThemeFeature>(
-                initialState: ThemeFeature.State(),
-                reducer: { ThemeFeature() }
-              )
+                store: store.scope(state: \.theme, action: \.theme)
             )
-//            Text("Theme Screen")
         case .community:
             CommunityView(
-                store: StoreOf<CommunityFeature>(
-                initialState: CommunityFeature.State(),
-                reducer: { CommunityFeature() }
-              )
+                store: store.scope(state: \.community, action: \.community)
             )
         case .myPage:
-//                            LoginView()
             MyView(
-                store: StoreOf<MyFeature>(
-                initialState: MyFeature.State(),
-                reducer: { MyFeature() }
-              )
+                store: store.scope(state: \.myPage, action: \.myPage)
             )
         }
     }
