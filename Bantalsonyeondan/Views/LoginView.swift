@@ -30,7 +30,7 @@ struct LoginView: View {
                     .font(.title3)
                     .foregroundColor(.gray)
                 Button {
-                    if (UserApi.isKakaoTalkLoginAvailable()) {
+                    if UserApi.isKakaoTalkLoginAvailable() {
                         viewStore.send(.kakaoLoginTapped)
                     } else {
                         viewStore.send(.kakaoAccountLoginTapped)
@@ -38,6 +38,7 @@ struct LoginView: View {
                 } label : {
                     Image("kakao_login_medium_narrow")
                 }
+                .disabled(viewStore.isLoading)
                 
                 Button {
                     // TODO: LoginFeature.Action에 naverLoginTapped 추가 후 연결
@@ -45,14 +46,37 @@ struct LoginView: View {
                 } label : {
                     Image("naver_login")
                 }
+                .disabled(true)
                 
                 AppleSignInButton {
                     viewStore.send(.appleLoginTapped)
+                }
+                .disabled(viewStore.isLoading)
+
+                if viewStore.isLoading {
+                    ProgressView()
                 }
                 
                 Spacer()
             }
             .padding()
+            .alert(
+                "로그인 실패",
+                isPresented: Binding(
+                    get: { viewStore.errorMessage != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            viewStore.send(.clearErrorMessage)
+                        }
+                    }
+                )
+            ) {
+                Button("확인", role: .cancel) {
+                    viewStore.send(.clearErrorMessage)
+                }
+            } message: {
+                Text(viewStore.errorMessage ?? "")
+            }
         }
     }
 }

@@ -37,10 +37,10 @@ struct ReviewAPIClient: APIClient {
     }
     
     /// PUT /v1/reviews/{reviewId} 리뷰 수정
-    func  updateReview(_ reviewId: String, review:Review) async throws -> Review {
+    func updateReview(_ reviewId: String, request reviewRequest: ReviewUpdateRequest) async throws -> Review {
         try await request("reviews/\(reviewId)",
                           method: "PUT",
-                          body: review)
+                          body: reviewRequest)
     }
     
     /// DELETE /v1/reviews/{reviewId} 리뷰 삭제
@@ -225,48 +225,71 @@ struct BoardAPIClient: APIClient {
 
 //MARK: 유저 API
 struct UserAPIClient: APIClient {
-    /// 카카오톡 로그인: 클라이언트에서 Kakao 로그인과 유저 조회까지 처리 후 userId만 서버에 전달
-    func loginWithKakaoTalkAsync() async throws -> String {
-        // Kakao SDK async 브리지로 토큰 획득 (필요 시 서버에 함께 보낼 수 있음)
+    /// 카카오톡 로그인
+    func loginWithKakaoTalkAsync() async throws -> AuthResponse {
         let accessToken = try await UserApi.shared.loginWithKakaoTalkAsync()
-
-        // Kakao 사용자 정보 조회 (userId 사용)
-        let user = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<User, Error>) in
-            UserApi.shared.me { user, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                } else if let user = user {
-                    continuation.resume(returning: user)
-                } else {
-                    continuation.resume(throwing: NSError(
-                        domain: "KakaoLoginError",
-                        code: 0,
-                        userInfo: [NSLocalizedDescriptionKey: "No User Info"]
-                    ))
-                }
-            }
-        }
-
-        guard let userId = user.id else {
-            throw NSError(
-                domain: "KakaoLoginError",
-                code: 0,
-                userInfo: [NSLocalizedDescriptionKey: "No User ID"]
+        let userId = try await fetchCurrentKakaoUserId()
+        return try await login(
+            provider: "kakao",
+            body: AppSocialLoginRequest(
+                code: accessToken,
+                accessToken: accessToken,
+                id: userId,
+                state: nil,
+                nonce: nil
             )
-        }
-
-        // 우리 서버에 userId 전달
-        let body: [String: String] = ["accessToken": accessToken, "id": "\(userId)"]
-        let response: String = try await self.request("auth/login/kakao", method: "POST", body: body)
-        return response
+        )
     }
 
-    /// 카카오 계정 로그인: 카카오 계정으로 로그인 후 동일하게 userId만 서버에 전달
-    func loginWithKakaoAccountAsync() async throws -> String {
-        // Kakao 계정으로 로그인 (비동기 브리지 사용)
-        _ = try await UserApi.shared.loginWithKakaoAccountAsync()
+    /// 카카오 계정 로그인
+    func loginWithKakaoAccountAsync() async throws -> AuthResponse {
+        let accessToken = try await UserApi.shared.loginWithKakaoAccountAsync()
+        let userId = try await fetchCurrentKakaoUserId()
+        return try await login(
+            provider: "kakao",
+            body: AppSocialLoginRequest(
+                code: accessToken,
+                accessToken: accessToken,
+                id: userId,
+                state: nil,
+                nonce: nil
+            )
+        )
+    }
 
-        // 내 정보 조회해서 user.id 가져오기
+    /// 네이버 로그인 (TODO: 구현 필요)
+    func loginWithNaverAsync() async throws -> AuthResponse {
+        throw NSError(domain: "NaverLogin", code: -1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+    }
+
+    /// 애플 로그인 전체 플로우: Apple 인증 + 서버 로그인
+    func loginWithAppleAsync() async throws -> AuthResponse {
+        let state = UUID().uuidString
+        let nonce = UUID().uuidString
+        let result = try await AppleSignInManager.shared
+            .signInWithAppleAsync(state: state, nonce: nonce)
+
+        if result.state != state {
+            throw NSError(domain: "AppleLogin", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid state"])
+        }
+
+        return try await login(
+            provider: "apple",
+            body: AppSocialLoginRequest(
+                code: result.authorizationCode,
+                accessToken: nil,
+                id: nil,
+                state: state,
+                nonce: nonce
+            )
+        )
+    }
+
+    private func login(provider: String, body: AppSocialLoginRequest) async throws -> AuthResponse {
+        try await request("auth/login/\(provider)", method: "POST", body: body)
+    }
+
+    private func fetchCurrentKakaoUserId() async throws -> Int64 {
         let user = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<User, Error>) in
             UserApi.shared.me { user, error in
                 if let error = error {
@@ -282,7 +305,6 @@ struct UserAPIClient: APIClient {
                 }
             }
         }
-
         guard let userId = user.id else {
             throw NSError(
                 domain: "KakaoMe",
@@ -290,39 +312,6 @@ struct UserAPIClient: APIClient {
                 userInfo: [NSLocalizedDescriptionKey: "No user id"]
             )
         }
-
-        // 우리 서버에 userId만 전달
-        let body: [String: Int64] = ["userId": userId]
-        let response: String = try await self.request("auth/login/kakao", method: "POST", body: body)
-        return response
-    }
-
-    /// 네이버 로그인 (TODO: 구현 필요)
-    func loginWithNaverAsync() async throws -> String {
-        // TODO: Naver login implementation
-        throw NSError(domain: "NaverLogin", code: -1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
-    }
-
-    /// 애플 로그인 전체 플로우: Apple 인증 + 서버 로그인
-    func loginWithAppleAsync() async throws -> String {
-        // 1) state / nonce 생성
-        let state = UUID().uuidString
-        let nonce = UUID().uuidString
-        
-        let result = try await AppleSignInManager.shared
-            .signInWithAppleAsync(state: state, nonce: nonce)
-
-        // 3) state 검증
-        if result.state != state {
-            throw NSError(domain: "AppleLogin", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid state"])
-        }
-
-        let body = AppleLoginRequest(
-            code: result.authorizationCode,
-            nonce: nonce
-        )
-
-        let response: String = try await self.request("auth/login/apple", method: "POST", body: body)
-        return response
+        return userId
     }
 }

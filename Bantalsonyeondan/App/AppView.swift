@@ -22,13 +22,27 @@ struct AppView: View {
     }
     
     var body: some View {
-        WithViewStore(store, observe: \.selectedTab) { viewStore in
-            VStack {
-                contentForSelectedTab(viewStore.state)
-                Divider()
+        WithViewStore(store, observe: { $0 }) { viewStore in
+            Group {
+                if viewStore.isAuthenticated {
+                    VStack {
+                        contentForSelectedTab(viewStore.selectedTab)
+                        Divider()
+                    }
+                    .safeAreaInset(edge: .bottom) {
+                        BottomToolBar(store: store)
+                    }
+                } else {
+                    LoginView(
+                        store: store.scope(
+                            state: \.login,
+                            action: \.login
+                        )
+                    )
+                }
             }
-            .safeAreaInset(edge: .bottom) {
-                BottomToolBar(store: store)
+            .onAppear {
+                viewStore.send(.onAppear)
             }
         }
         .onOpenURL { url in

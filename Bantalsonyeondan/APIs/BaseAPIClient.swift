@@ -12,7 +12,7 @@ protocol BaseAPIClientProtocol {
     /// 네트워크 요청을 위한 기본 URL
     var baseURL: URL { get }
     /// 인증 토큰 등 공통 헤더에 필요한 값
-    var bearerToken: String { get }
+    var bearerToken: String? { get }
     
     /// 실제 요청을 담당하는 메서드 (제네릭)
     /// - path: 경로
@@ -33,7 +33,7 @@ extension BaseAPIClientProtocol {
         APIConfig.baseURL
     }
     
-    var bearerToken: String {
+    var bearerToken: String? {
         APIConfig.bearerToken
     }
     
@@ -73,7 +73,7 @@ extension BaseAPIClientProtocol {
         request.httpMethod = method
         request.addValue("*/*", forHTTPHeaderField: "Accept")
         
-        if !finalURL.absoluteString.contains("auth") {
+        if !finalURL.absoluteString.contains("auth"), let bearerToken {
             request.addValue(bearerToken, forHTTPHeaderField: "Authorization")
         }
         

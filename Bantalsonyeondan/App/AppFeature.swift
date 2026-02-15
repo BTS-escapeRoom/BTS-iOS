@@ -16,36 +16,109 @@ enum Tab: Equatable {
 
 // MARK: - Reducer
 struct AppFeature: Reducer {
+    @Dependency(\.memberAPIClient) var memberAPIClient
+
     // MARK: - State
     struct State: Equatable {
         var selectedTab: Tab = .theme
         var theme = ThemeFeature.State()
         var community = CommunityFeature.State()
         var myPage = MyFeature.State()
+        var login = LoginFeature.State()
+        var userSession: UserSession? = AuthSessionStore.currentSession
+        var currentMember: Member? = AuthSessionStore.currentMember
+
+        var isAuthenticated: Bool { userSession != nil }
     }
     
     // MARK: - Action
     @CasePathable
     enum Action {
+        case onAppear
         case selectTab(Tab)
         case theme(ThemeFeature.Action)
         case community(CommunityFeature.Action)
         case myPage(MyFeature.Action)
+        case login(LoginFeature.Action)
+        case refreshMemberResponse(Result<Member, Error>)
     }
 
     var body: some ReducerOf<Self> {
         Scope(state: \.theme, action: \.theme) { ThemeFeature() }
         Scope(state: \.community, action: \.community) { CommunityFeature() }
         Scope(state: \.myPage, action: \.myPage) { MyFeature() }
+        Scope(state: \.login, action: \.login) { LoginFeature() }
 
         Reduce { state, action in
             switch action {
+            case .onAppear:
+                restoreSessionState(&state)
+
+                guard state.isAuthenticated, state.currentMember == nil else {
+                    return .none
+                }
+                return .run { send in
+                    do {
+                        let member = try await memberAPIClient.getMyMembers()
+                        await send(.refreshMemberResponse(.success(member)))
+                    } catch {
+                        await send(.refreshMemberResponse(.failure(error)))
+                    }
+                }
+
+            case let .refreshMemberResponse(.success(member)):
+                state.currentMember = member
+                state.myPage.member = member
+                AuthSessionStore.currentMember = member
+                return .none
+
+            case .refreshMemberResponse(.failure):
+                return .none
+
             case let .selectTab(tab):
                 state.selectedTab = tab
                 return .none
-            case .theme, .community, .myPage:
+
+            case let .login(.delegate(.didLogin(session, member))):
+                applyLogin(session: session, member: member, to: &state)
+                return .none
+
+            case .myPage(.delegate(.logoutRequested)):
+                logout(&state)
+                return .none
+
+            case .myPage(.delegate(.openThemeTab)):
+                state.selectedTab = .theme
+                return .none
+
+            case .theme, .community, .myPage, .login:
                 return .none
             }
         }
+    }
+
+    private func restoreSessionState(_ state: inout State) {
+        state.userSession = AuthSessionStore.currentSession
+        state.currentMember = AuthSessionStore.currentMember
+        state.myPage.member = state.currentMember
+    }
+
+    private func applyLogin(session: UserSession, member: Member?, to state: inout State) {
+        state.userSession = session
+        state.currentMember = member
+        state.myPage = MyFeature.State(member: member)
+        AuthSessionStore.currentSession = session
+        AuthSessionStore.currentMember = member
+    }
+
+    private func logout(_ state: inout State) {
+        AuthSessionStore.clearAll()
+        state.selectedTab = .theme
+        state.theme = ThemeFeature.State()
+        state.community = CommunityFeature.State()
+        state.myPage = MyFeature.State()
+        state.login = LoginFeature.State()
+        state.userSession = nil
+        state.currentMember = nil
     }
 }

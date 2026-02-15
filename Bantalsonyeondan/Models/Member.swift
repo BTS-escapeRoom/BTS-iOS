@@ -13,7 +13,7 @@ struct MemberUpdateRequest: Encodable {
     let description: String?
 }
 
-struct Member: Decodable, Equatable {
+struct Member: Codable, Equatable {
     let id: Int
     let profileImg: String?
     let nickname: String?
