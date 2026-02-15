@@ -186,6 +186,11 @@ struct BoardAPIClient: APIClient {
     func getBoards(_ boardRequest: BoardRequest) async throws -> BoardResponse {
         try await request("boards", query: boardRequest)
     }
+
+    /// GET /v1/boards/my
+    func getMyBoards() async throws -> [Board] {
+        try await request("boards/my")
+    }
     
     /// POST /v1/boards
     func createBoards(_ board: BoardCreateRequest) async throws -> BoardSimple {

@@ -15,6 +15,7 @@
 		514A91662EA90B0A009DDE4B /* AppleSignInButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514A91652EA90B0A009DDE4B /* AppleSignInButton.swift */; };
 		515857C42E9FBD8B002ACE2C /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515857C32E9FBD8B002ACE2C /* MyView.swift */; };
 		515857C62E9FBDE3002ACE2C /* MyFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515857C52E9FBDE3002ACE2C /* MyFeature.swift */; };
+		51CDBB512F520B4D00A4D521 /* RecruitBoardActivityFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51CDBB502F520B4D00A4D521 /* RecruitBoardActivityFeature.swift */; };
 		515857C92E9FCA81002ACE2C /* BoardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515857C82E9FCA81002ACE2C /* BoardDetailView.swift */; };
 		515857CD2E9FCBDA002ACE2C /* BoardDetailFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515857CC2E9FCBDA002ACE2C /* BoardDetailFeature.swift */; };
 		515857CF2E9FD83B002ACE2C /* ThemeDetailRouteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515857CE2E9FD83B002ACE2C /* ThemeDetailRouteView.swift */; };
@@ -94,6 +95,7 @@
 		514A91652EA90B0A009DDE4B /* AppleSignInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInButton.swift; sourceTree = "<group>"; };
 		515857C32E9FBD8B002ACE2C /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
 		515857C52E9FBDE3002ACE2C /* MyFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFeature.swift; sourceTree = "<group>"; };
+		51CDBB502F520B4D00A4D521 /* RecruitBoardActivityFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecruitBoardActivityFeature.swift; sourceTree = "<group>"; };
 		515857C82E9FCA81002ACE2C /* BoardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardDetailView.swift; sourceTree = "<group>"; };
 		515857CC2E9FCBDA002ACE2C /* BoardDetailFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardDetailFeature.swift; sourceTree = "<group>"; };
 		515857CE2E9FD83B002ACE2C /* ThemeDetailRouteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeDetailRouteView.swift; sourceTree = "<group>"; };
@@ -195,6 +197,7 @@
 				51A0DAD32F3254E70009F19C /* RecordsView.swift */,
 				515857C32E9FBD8B002ACE2C /* MyView.swift */,
 				515857C52E9FBDE3002ACE2C /* MyFeature.swift */,
+				51CDBB502F520B4D00A4D521 /* RecruitBoardActivityFeature.swift */,
 			);
 			path = My;
 			sourceTree = "<group>";
@@ -540,6 +543,7 @@
 				51619C9A2D787E9D00E8E866 /* TestView.swift in Sources */,
 				515857C62E9FBDE3002ACE2C /* MyFeature.swift in Sources */,
 				51A0DAD42F3254E70009F19C /* RecordsView.swift in Sources */,
+				51CDBB512F520B4D00A4D521 /* RecruitBoardActivityFeature.swift in Sources */,
 				515857CF2E9FD83B002ACE2C /* ThemeDetailRouteView.swift in Sources */,
 				51DF46B32DE733CC00FA49EB /* LocationManager.swift in Sources */,
 				51619C952D6601AB00E8E866 /* APIConfig.swift in Sources */,

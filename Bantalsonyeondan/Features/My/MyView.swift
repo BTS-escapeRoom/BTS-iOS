@@ -4,6 +4,7 @@ import ComposableArchitecture
 struct MyView: View {
     let store: StoreOf<MyFeature>
     @State private var isShowingRecords: Bool = false
+    @State private var isShowingRecruitBoardActivity: Bool = false
 
     private struct MenuItem: Identifiable {
         let id = UUID()
@@ -60,6 +61,14 @@ struct MyView: View {
                         onToggleDisplay: { reviewId in
                             viewStore.send(.toggleHistoryDisplay(reviewId: reviewId))
                         }
+                    )
+                }
+                .navigationDestination(isPresented: $isShowingRecruitBoardActivity) {
+                    RecruitBoardActivityView(
+                        store: store.scope(
+                            state: \.recruitBoardActivity,
+                            action: \.recruitBoardActivity
+                        )
                     )
                 }
                 .overlay {
@@ -153,7 +162,9 @@ struct MyView: View {
         VStack(spacing: 0) {
             ForEach(Array(menuItems.enumerated()), id: \.element.id) { index, item in
                 Button {
-                    // TODO: 메뉴별 액션 연결
+                    if index == 0 {
+                        isShowingRecruitBoardActivity = true
+                    }
                 } label: {
                     MenuRow(title: item.title)
                 }
