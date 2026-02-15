@@ -13,6 +13,9 @@ struct Review: Encodable, Decodable, Equatable, Identifiable {
     let content: String?
     let people: Int?
     let time: Int?
+    let elapsedTime: Int?
+    let remainingTime: Int?
+    let timeType: String?
     let difficulty: Double?
     let scareScore: Int?
     let activityScore: Int?
@@ -22,6 +25,63 @@ struct Review: Encodable, Decodable, Equatable, Identifiable {
     let createdAt: String?
     let isMyReview: Bool?
     let nickname: String?
+
+    init(
+        id: Int,
+        content: String? = nil,
+        people: Int? = nil,
+        time: Int? = nil,
+        elapsedTime: Int? = nil,
+        remainingTime: Int? = nil,
+        timeType: String? = nil,
+        difficulty: Double? = nil,
+        scareScore: Int? = nil,
+        activityScore: Int? = nil,
+        visitDate: String? = nil,
+        hints: Int? = nil,
+        isSuccess: Bool? = nil,
+        createdAt: String? = nil,
+        isMyReview: Bool? = nil,
+        nickname: String? = nil
+    ) {
+        self.id = id
+        self.content = content
+        self.people = people
+        self.time = time
+        self.elapsedTime = elapsedTime
+        self.remainingTime = remainingTime
+        self.timeType = timeType
+        self.difficulty = difficulty
+        self.scareScore = scareScore
+        self.activityScore = activityScore
+        self.visitDate = visitDate
+        self.hints = hints
+        self.isSuccess = isSuccess
+        self.createdAt = createdAt
+        self.isMyReview = isMyReview
+        self.nickname = nickname
+    }
+
+    var effectiveTimeType: String {
+        if let timeType, !timeType.isEmpty {
+            return timeType
+        }
+        return "ELAPSED"
+    }
+
+    var effectiveTimeInSeconds: Int {
+        if let time {
+            return time
+        }
+        switch effectiveTimeType {
+        case "RAMAINING":
+            return remainingTime ?? 0
+        case "NONE":
+            return 0
+        default:
+            return elapsedTime ?? remainingTime ?? 0
+        }
+    }
 }
 
 struct ReviewRegist: Encodable, Decodable, Equatable {
@@ -35,6 +95,20 @@ struct ReviewRegist: Encodable, Decodable, Equatable {
     let visitDate: String
     let isSuccess: Bool
     let themeId: Int
+}
+
+struct ReviewUpdateRequest: Encodable, Equatable {
+    let content: String
+    let people: Int
+    let time: Int
+    let timeType: String
+    let scareScore: Int
+    let activityScore: Int
+    let difficulty: Double
+    let hints: Int
+    let visitDate: String?
+    let isSuccess: Bool
+    let themeId: Int?
 }
 
 struct ReviewHistory: Decodable, Equatable, Identifiable {

@@ -11,6 +11,12 @@ import Foundation
 struct ThemeFeature: Reducer {
     private var locationManager = LocationManager()
     private enum CancelID { case search }
+    private let distanceCoordinateCacheAge: TimeInterval = 60 * 60 * 24
+    private struct ResolvedCoordinate {
+        let latitude: Double?
+        let longitude: Double?
+        let shouldCache: Bool
+    }
 
     struct State: Equatable {
         var searchText: String = ""
@@ -20,6 +26,8 @@ struct ThemeFeature: Reducer {
         var isLoading: Bool = false
         var selectedThemeDetail: ThemeDetail? = nil
         var sortOption: SortOption = .distance
+        var cachedLatitude: Double? = nil
+        var cachedLongitude: Double? = nil
         var errorMessage: String? = nil
     }
     
@@ -30,6 +38,7 @@ struct ThemeFeature: Reducer {
         case onSortOptionSelected(SortOption)
         case onLoadNextPage
         case themeTapped(themeId: Int)
+        case cacheDistanceCoordinate(latitude: Double, longitude: Double)
         case dismissDetail
         case clearErrorMessage
     }
@@ -46,19 +55,38 @@ struct ThemeFeature: Reducer {
             let requestedPage = 1
             let currentSortOption = state.sortOption
             let currentKeyword = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
+            if currentSortOption == .distance,
+               (state.cachedLatitude == nil || state.cachedLongitude == nil),
+               let cachedCoordinate = locationManager.cachedCoordinate(maxAge: distanceCoordinateCacheAge) {
+                state.cachedLatitude = cachedCoordinate.latitude
+                state.cachedLongitude = cachedCoordinate.longitude
+            }
+            let cachedLatitude = state.cachedLatitude
+            let cachedLongitude = state.cachedLongitude
             return .run { send in
                 do {
                     try await Task.sleep(for: .milliseconds(300))
-                    let coordinate = currentSortOption == .distance
-                                    ? try await locationManager.getLocation()
-                                    : nil
-                    let latitude = coordinate?.latitude
-                    let longitude = coordinate?.longitude
+                    let coordinate = await resolveCoordinate(
+                        for: currentSortOption,
+                        cachedLatitude: cachedLatitude,
+                        cachedLongitude: cachedLongitude
+                    )
+                    if coordinate.shouldCache,
+                       let latitude = coordinate.latitude,
+                       let longitude = coordinate.longitude {
+                        await send(
+                            .cacheDistanceCoordinate(
+                                latitude: latitude,
+                                longitude: longitude
+                            )
+                        )
+                    }
+
                     let themeResponse = try await themeApiClient.fetchThemes(
                         ThemeRequest(keyword: currentKeyword.isEmpty ? nil : currentKeyword,
                                      sort: currentSortOption,
-                                     latitude: latitude,
-                                     longitude: longitude,
+                                     latitude: coordinate.latitude,
+                                     longitude: coordinate.longitude,
                                      page: requestedPage
                                     )
                     )
@@ -85,18 +113,31 @@ struct ThemeFeature: Reducer {
             state.isLoading = true
             let currentSortOption = state.sortOption
             let currentKeyword = state.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            let cachedLatitude = state.cachedLatitude
+            let cachedLongitude = state.cachedLongitude
             return .run { send in
                 do {
-                    let coordinate = currentSortOption == .distance
-                                    ? try await locationManager.getLocation()
-                                    : nil
-                    let latitude = coordinate?.latitude
-                    let longitude = coordinate?.longitude
+                    let coordinate = await resolveCoordinate(
+                        for: currentSortOption,
+                        cachedLatitude: cachedLatitude,
+                        cachedLongitude: cachedLongitude
+                    )
+                    if coordinate.shouldCache,
+                       let latitude = coordinate.latitude,
+                       let longitude = coordinate.longitude {
+                        await send(
+                            .cacheDistanceCoordinate(
+                                latitude: latitude,
+                                longitude: longitude
+                            )
+                        )
+                    }
+
                     let themeResponse = try await themeApiClient.fetchThemes(
                         ThemeRequest(keyword: currentKeyword.isEmpty ? nil : currentKeyword,
                                      sort: currentSortOption,
-                                     latitude: latitude,
-                                     longitude: longitude,
+                                     latitude: coordinate.latitude,
+                                     longitude: coordinate.longitude,
                                      page: requestedPage)
                     )
                     await send(.fetchThemesResponse(.success(themeResponse), requestedPage: requestedPage))
@@ -117,6 +158,11 @@ struct ThemeFeature: Reducer {
 
         case .dismissDetail:
             state.selectedThemeDetail = nil
+            return .none
+
+        case let .cacheDistanceCoordinate(latitude, longitude):
+            state.cachedLatitude = latitude
+            state.cachedLongitude = longitude
             return .none
 
         case let .fetchThemesResponse(.success(themeResponse), requestedPage):
@@ -150,5 +196,33 @@ struct ThemeFeature: Reducer {
             state.errorMessage = nil
             return .none
         }
+    }
+
+    private func resolveCoordinate(
+        for sortOption: SortOption,
+        cachedLatitude: Double?,
+        cachedLongitude: Double?
+    ) async -> ResolvedCoordinate {
+        guard sortOption == .distance else {
+            return .init(latitude: nil, longitude: nil, shouldCache: false)
+        }
+
+        if let cachedLatitude, let cachedLongitude {
+            return .init(
+                latitude: cachedLatitude,
+                longitude: cachedLongitude,
+                shouldCache: false
+            )
+        }
+
+        if let coordinate = try? await locationManager.getLocation(maxCacheAge: distanceCoordinateCacheAge) {
+            return .init(
+                latitude: coordinate.latitude,
+                longitude: coordinate.longitude,
+                shouldCache: true
+            )
+        }
+
+        return .init(latitude: nil, longitude: nil, shouldCache: false)
     }
 }
