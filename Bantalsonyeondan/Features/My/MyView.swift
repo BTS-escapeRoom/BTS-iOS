@@ -62,7 +62,7 @@ struct MyView: View {
                         .padding(.horizontal, 4)
 
                         recordsSection(viewStore: viewStore)
-                        menuSection
+                        menuSection(viewStore: viewStore)
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
@@ -160,6 +160,7 @@ struct MyView: View {
                 Spacer()
 
                 Button("더보기") {
+                    viewStore.send(.refresh)
                     isShowingRecords = true
                 }
                 .font(.caption)
@@ -200,11 +201,11 @@ struct MyView: View {
         }
     }
 
-    private var menuSection: some View {
+    private func menuSection(viewStore: ViewStoreOf<MyFeature>) -> some View {
         VStack(spacing: 0) {
             ForEach(Array(menuItems.enumerated()), id: \.element.id) { index, item in
                 Button {
-                    handleMenuAction(item.action)
+                    handleMenuAction(item.action, viewStore: viewStore)
                 } label: {
                     MenuRow(title: item.title)
                 }
@@ -224,11 +225,13 @@ struct MyView: View {
         )
     }
 
-    private func handleMenuAction(_ action: MenuAction) {
+    private func handleMenuAction(_ action: MenuAction, viewStore: ViewStoreOf<MyFeature>) {
         switch action {
         case .recruitBoardActivity:
+            viewStore.send(.recruitBoardActivity(.reload))
             isShowingRecruitBoardActivity = true
         case .myReviews:
+            viewStore.send(.myReviews(.reload))
             isShowingMyReviews = true
         case .inquiry:
             isShowingInquiry = true

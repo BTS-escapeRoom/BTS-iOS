@@ -12,7 +12,6 @@ struct MyFeature: Reducer {
 
         var isLoading: Bool = false
         var isUpdatingDisplay: Bool = false
-        var didLoad: Bool = false
         var errorMessage: String? = nil
 
         var previewHistories: [ReviewHistory] {
@@ -25,6 +24,7 @@ struct MyFeature: Reducer {
     @CasePathable
     enum Action {
         case onAppear
+        case refresh
         case memberResponse(Result<Member, Error>)
         case historyResponse(Result<[ReviewHistory], Error>)
         case toggleHistoryDisplay(reviewId: Int)
@@ -56,10 +56,12 @@ struct MyFeature: Reducer {
         Reduce { state, action in
             switch action {
             case .onAppear:
-                guard !state.didLoad else { return .none }
+                return .send(.refresh)
 
-                state.didLoad = true
+            case .refresh:
+                guard !state.isLoading else { return .none }
                 state.isLoading = true
+                state.errorMessage = nil
 
                 return .run { send in
                     do {
@@ -84,7 +86,6 @@ struct MyFeature: Reducer {
 
             case let .memberResponse(.failure(error)):
                 state.isLoading = false
-                state.didLoad = false
                 state.errorMessage = error.localizedDescription
                 return .none
 
@@ -97,7 +98,6 @@ struct MyFeature: Reducer {
 
             case let .historyResponse(.failure(error)):
                 state.isLoading = false
-                state.didLoad = false
                 state.histories = []
                 state.displayedReviewIds = []
                 state.errorMessage = error.localizedDescription
@@ -234,7 +234,6 @@ struct MyReviewsFeature: Reducer {
         var editingReview: Review? = nil
         var isLoading: Bool = false
         var isProcessing: Bool = false
-        var didLoad: Bool = false
         var errorMessage: String? = nil
     }
 
@@ -269,11 +268,10 @@ struct MyReviewsFeature: Reducer {
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
         switch action {
         case .onAppear:
-            guard !state.didLoad else { return .none }
             return .send(.reload)
 
         case .reload:
-            state.didLoad = true
+            guard !state.isLoading else { return .none }
             state.isLoading = true
             state.errorMessage = nil
             return .run { send in

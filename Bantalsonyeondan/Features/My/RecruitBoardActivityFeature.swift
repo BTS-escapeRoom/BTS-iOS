@@ -39,12 +39,12 @@ struct RecruitBoardActivityFeature: Reducer {
         var commentedBoards: [Board] = []
         var likedBoards: [Board] = []
         var isLoading: Bool = false
-        var didLoad: Bool = false
         var errorMessage: String? = nil
     }
 
     enum Action {
         case onAppear
+        case reload
         case setTab(Tab)
         case setSortOption(SortOption)
         case myBoardsResponse(Result<[Board], Error>)
@@ -58,8 +58,10 @@ struct RecruitBoardActivityFeature: Reducer {
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
         switch action {
         case .onAppear:
-            guard !state.didLoad else { return .none }
-            state.didLoad = true
+            return .send(.reload)
+
+        case .reload:
+            guard !state.isLoading else { return .none }
             state.isLoading = true
             state.errorMessage = nil
 

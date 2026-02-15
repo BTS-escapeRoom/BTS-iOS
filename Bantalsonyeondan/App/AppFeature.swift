@@ -84,6 +84,9 @@ struct AppFeature: Reducer {
 
             case let .selectTab(tab):
                 state.selectedTab = tab
+                if tab == .myPage {
+                    return .send(.myPage(.refresh))
+                }
                 return .none
 
             case let .login(.delegate(.didLogin(session, member))):
