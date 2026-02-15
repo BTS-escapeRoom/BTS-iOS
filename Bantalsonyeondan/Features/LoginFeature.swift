@@ -18,6 +18,7 @@ struct LoginFeature: Reducer {
     enum Action {
         case kakaoLoginTapped
         case kakaoAccountLoginTapped
+        case naverLoginTapped
         case appleLoginTapped
         case loginSucceeded(UserSession, Member?)
         case loginFailed(String)
@@ -42,6 +43,10 @@ struct LoginFeature: Reducer {
         case .kakaoAccountLoginTapped:
             startLoading(&state)
             return loginEffect { try await userAPIClient.loginWithKakaoAccountAsync() }
+
+        case .naverLoginTapped:
+            startLoading(&state)
+            return loginEffect { try await userAPIClient.loginWithNaverAsync() }
 
         case .appleLoginTapped:
             startLoading(&state)

@@ -11,7 +11,6 @@ import KakaoSDKCommon
 import KakaoSDKUser
 import KakaoSDKAuth
 import AuthenticationServices
-import NaverThirdPartyLogin
 
 struct LoginView: View {
     let store: StoreOf<LoginFeature>
@@ -41,12 +40,11 @@ struct LoginView: View {
                 .disabled(viewStore.isLoading)
                 
                 Button {
-                    // TODO: LoginFeature.Action에 naverLoginTapped 추가 후 연결
-                    // viewStore.send(.naverLoginTapped)
+                    viewStore.send(.naverLoginTapped)
                 } label : {
                     Image("naver_login")
                 }
-                .disabled(true)
+                .disabled(viewStore.isLoading)
                 
                 AppleSignInButton {
                     viewStore.send(.appleLoginTapped)

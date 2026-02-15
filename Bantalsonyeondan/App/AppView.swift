@@ -8,10 +8,7 @@
 import SwiftUI
 import ComposableArchitecture
 import KakaoSDKCommon
-import KakaoSDKUser
 import KakaoSDKAuth
-import AuthenticationServices
-import NaverThirdPartyLogin
 
 struct AppView: View {
     let store: StoreOf<AppFeature>
@@ -62,20 +59,14 @@ struct AppView: View {
         }
     }
     
-    /// 외부 로그인 콜백 URL 처리: 카카오 / 애플 / 네이버 분기
+    /// 외부 로그인 콜백 URL 처리: 카카오 분기
     private func handleOpenURL(_ url: URL) {
         // 1) 카카오톡 로그인 콜백
         if AuthApi.isKakaoTalkLoginUrl(url) {
             _ = AuthController.handleOpenUrl(url: url)
             return
         }
-        
-        // 3) 네이버 로그인 콜백
-        if url.scheme == NaverThirdPartyLoginConnection.getSharedInstance()?.serviceUrlScheme {
-            NaverThirdPartyLoginConnection.getSharedInstance()?.receiveAccessToken(url)
-            return
-        }
-        
+
         // 그 외 다른 딥링크가 있다면 여기서 추가 처리
     }
     

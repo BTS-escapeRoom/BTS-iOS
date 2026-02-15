@@ -257,9 +257,19 @@ struct UserAPIClient: APIClient {
         )
     }
 
-    /// 네이버 로그인 (TODO: 구현 필요)
+    /// 네이버 로그인: Authorization Code + State 획득 후 서버 로그인
     func loginWithNaverAsync() async throws -> AuthResponse {
-        throw NSError(domain: "NaverLogin", code: -1, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        let result = try await NaverSignInManager.shared.signInWithNaverAsync()
+        return try await login(
+            provider: "naver",
+            body: AppSocialLoginRequest(
+                code: result.code,
+                accessToken: nil,
+                id: nil,
+                state: result.state,
+                nonce: nil
+            )
+        )
     }
 
     /// 애플 로그인 전체 플로우: Apple 인증 + 서버 로그인
@@ -279,7 +289,7 @@ struct UserAPIClient: APIClient {
                 code: result.authorizationCode,
                 accessToken: nil,
                 id: nil,
-                state: state,
+                state: nil,
                 nonce: nonce
             )
         )
