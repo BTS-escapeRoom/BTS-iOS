@@ -53,6 +53,9 @@ struct AppView: View {
             .onAppear {
                 viewStore.send(.onAppear)
             }
+            .onReceive(NotificationCenter.default.publisher(for: .authSessionExpired)) { _ in
+                viewStore.send(.sessionExpired)
+            }
         }
         .onOpenURL { url in
             handleOpenURL(url)

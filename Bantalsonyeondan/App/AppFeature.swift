@@ -38,6 +38,7 @@ struct AppFeature: Reducer {
     @CasePathable
     enum Action {
         case onAppear
+        case sessionExpired
         case selectTab(Tab)
         case theme(ThemeFeature.Action)
         case community(CommunityFeature.Action)
@@ -71,6 +72,11 @@ struct AppFeature: Reducer {
                         await send(.refreshMemberResponse(.failure(error)))
                     }
                 }
+
+            case .sessionExpired:
+                logout(&state)
+                state.login.errorMessage = "로그인이 만료되었어요. 다시 로그인해주세요."
+                return .none
 
             case let .refreshMemberResponse(.success(member)):
                 state.currentMember = member
