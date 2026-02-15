@@ -17,7 +17,7 @@ struct ThemeView: View {
                 CustomSearchBar(
                     text: viewStore.binding(
                         get: \.searchText,
-                        send: ThemeFeature.Action.onSearchBarEntered
+                        send: ThemeFeature.Action.reloadThemes
                     ),
                     placeholder: "원하는 테마 또는 업체명 검색"
                 )
@@ -47,6 +47,8 @@ struct ThemeView: View {
                     ThemeGridView(
                         themes: viewStore.themes,
                         isLoadingNextPage: viewStore.isLoading && !viewStore.themes.isEmpty,
+                        canLoadMorePages: viewStore.nextPage > 1
+                            && (viewStore.totalPage == 0 || viewStore.nextPage <= viewStore.totalPage),
                         resetKey: "\(viewStore.sortOption.rawValue)|\(viewStore.searchText)",
                         onTap: { themeId in
                             viewStore.send(.themeTapped(themeId: themeId))
@@ -102,10 +104,12 @@ struct ThemeView: View {
 struct ThemeGridView: View {
     let themes: [Theme]
     let isLoadingNextPage: Bool
+    let canLoadMorePages: Bool
     let resetKey: String
     let onTap: (_ themeId: Int) -> Void
     let loadNextPage: () -> Void
     @State private var maxVisibleIndex: Int = -1
+    @State private var didInitialAutoLoad: Bool = false
     
     private let columns = [
         GridItem(.adaptive(minimum: 150), spacing: 16)
@@ -133,21 +137,45 @@ struct ThemeGridView: View {
                 ProgressView()
                     .padding(.bottom, 16)
             }
+
+            if canLoadMorePages {
+                Color.clear
+                    .frame(height: 1)
+                    .id("page-sentinel-\(themes.count)-\(resetKey)")
+                    .onAppear {
+                        requestNextPageIfNeeded(force: true)
+                    }
+            }
+        }
+        .onAppear {
+            if !didInitialAutoLoad {
+                didInitialAutoLoad = true
+                requestNextPageIfNeeded(force: true)
+            }
         }
         .onChange(of: resetKey) { _ in
             maxVisibleIndex = -1
+            didInitialAutoLoad = false
         }
         .onChange(of: themes.count) { newCount in
             if maxVisibleIndex >= newCount {
                 maxVisibleIndex = -1
             }
+            if newCount == 0 {
+                didInitialAutoLoad = false
+                return
+            }
         }
     }
     
-    private func requestNextPageIfNeeded() {
+    private func requestNextPageIfNeeded(force: Bool = false) {
         guard !themes.isEmpty else { return }
-        let triggerIndex = max(0, themes.count - prefetchRemainingItemCount)
-        guard maxVisibleIndex >= triggerIndex else { return }
+        guard canLoadMorePages else { return }
+        guard !isLoadingNextPage else { return }
+        if !force {
+            let triggerIndex = max(0, themes.count - prefetchRemainingItemCount)
+            guard maxVisibleIndex >= triggerIndex else { return }
+        }
         loadNextPage()
     }
 }

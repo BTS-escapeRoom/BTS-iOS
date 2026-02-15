@@ -26,7 +26,7 @@ struct ThemeFeature: Reducer {
     enum Action {
         case fetchThemesResponse(Result<ThemeResponse, Error>, requestedPage: Int)
         case fetchThemeDetailResponse(Result<ThemeDetail, Error>)
-        case onSearchBarEntered(String)
+        case reloadThemes(String)
         case onSortOptionSelected(SortOption)
         case onLoadNextPage
         case themeTapped(themeId: Int)
@@ -38,7 +38,7 @@ struct ThemeFeature: Reducer {
     
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
         switch action {
-        case let .onSearchBarEntered(keyword):
+        case let .reloadThemes(keyword):
             state.searchText = keyword
             state.nextPage = 0
             state.isLoading = true
@@ -73,7 +73,7 @@ struct ThemeFeature: Reducer {
 
         case let .onSortOptionSelected(sortOption):
             state.sortOption = sortOption
-            return .send(.onSearchBarEntered(state.searchText))
+            return .send(.reloadThemes(state.searchText))
 
         case .onLoadNextPage:
             guard state.isLoading == false else { return .none }

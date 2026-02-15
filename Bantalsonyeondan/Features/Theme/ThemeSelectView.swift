@@ -25,7 +25,7 @@ struct ThemeSelectView: View {
                 CustomSearchBar(
                     text: viewStore.binding(
                         get: \.searchText,
-                        send: ThemeFeature.Action.onSearchBarEntered
+                        send: ThemeFeature.Action.reloadThemes
                     ),
                     placeholder: "테마명, 지역명 검색"
                 )
