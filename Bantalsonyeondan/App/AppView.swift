@@ -25,12 +25,21 @@ struct AppView: View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             Group {
                 if viewStore.isAuthenticated {
-                    VStack {
-                        contentForSelectedTab(viewStore.selectedTab)
-                        Divider()
-                    }
-                    .safeAreaInset(edge: .bottom) {
-                        BottomToolBar(store: store)
+                    if viewStore.shouldShowNicknameSetup {
+                        NicknameSetupView(
+                            store: store.scope(
+                                state: \.nicknameSetup,
+                                action: \.nicknameSetup
+                            )
+                        )
+                    } else {
+                        VStack {
+                            contentForSelectedTab(viewStore.selectedTab)
+                            Divider()
+                        }
+                        .safeAreaInset(edge: .bottom) {
+                            BottomToolBar(store: store)
+                        }
                     }
                 } else {
                     LoginView(

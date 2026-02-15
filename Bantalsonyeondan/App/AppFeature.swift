@@ -25,10 +25,13 @@ struct AppFeature: Reducer {
         var community = CommunityFeature.State()
         var myPage = MyFeature.State()
         var login = LoginFeature.State()
+        var nicknameSetup = NicknameSetupFeature.State()
         var userSession: UserSession? = AuthSessionStore.currentSession
         var currentMember: Member? = AuthSessionStore.currentMember
+        var needsNicknameSetup: Bool = false
 
         var isAuthenticated: Bool { userSession != nil }
+        var shouldShowNicknameSetup: Bool { isAuthenticated && needsNicknameSetup }
     }
     
     // MARK: - Action
@@ -40,6 +43,7 @@ struct AppFeature: Reducer {
         case community(CommunityFeature.Action)
         case myPage(MyFeature.Action)
         case login(LoginFeature.Action)
+        case nicknameSetup(NicknameSetupFeature.Action)
         case refreshMemberResponse(Result<Member, Error>)
     }
 
@@ -48,11 +52,13 @@ struct AppFeature: Reducer {
         Scope(state: \.community, action: \.community) { CommunityFeature() }
         Scope(state: \.myPage, action: \.myPage) { MyFeature() }
         Scope(state: \.login, action: \.login) { LoginFeature() }
+        Scope(state: \.nicknameSetup, action: \.nicknameSetup) { NicknameSetupFeature() }
 
         Reduce { state, action in
             switch action {
             case .onAppear:
                 restoreSessionState(&state)
+                evaluateNicknameRequirement(&state)
 
                 guard state.isAuthenticated, state.currentMember == nil else {
                     return .none
@@ -70,6 +76,7 @@ struct AppFeature: Reducer {
                 state.currentMember = member
                 state.myPage.member = member
                 AuthSessionStore.currentMember = member
+                evaluateNicknameRequirement(&state)
                 return .none
 
             case .refreshMemberResponse(.failure):
@@ -81,6 +88,27 @@ struct AppFeature: Reducer {
 
             case let .login(.delegate(.didLogin(session, member))):
                 applyLogin(session: session, member: member, to: &state)
+                evaluateNicknameRequirement(&state)
+                return .none
+
+            case let .nicknameSetup(.delegate(.didComplete(member))):
+                state.currentMember = member
+                state.myPage.member = member
+                state.needsNicknameSetup = false
+                state.nicknameSetup = NicknameSetupFeature.State()
+                AuthSessionStore.currentMember = member
+
+                if let session = state.userSession {
+                    let updatedSession = UserSession(
+                        accessToken: session.accessToken,
+                        refreshToken: session.refreshToken,
+                        memberId: session.memberId,
+                        role: session.role,
+                        isNewUser: false
+                    )
+                    state.userSession = updatedSession
+                    AuthSessionStore.currentSession = updatedSession
+                }
                 return .none
 
             case .myPage(.delegate(.logoutRequested)):
@@ -91,7 +119,7 @@ struct AppFeature: Reducer {
                 state.selectedTab = .theme
                 return .none
 
-            case .theme, .community, .myPage, .login:
+            case .theme, .community, .myPage, .login, .nicknameSetup:
                 return .none
             }
         }
@@ -101,12 +129,14 @@ struct AppFeature: Reducer {
         state.userSession = AuthSessionStore.currentSession
         state.currentMember = AuthSessionStore.currentMember
         state.myPage.member = state.currentMember
+        state.nicknameSetup.nickname = state.currentMember?.nickname ?? ""
     }
 
     private func applyLogin(session: UserSession, member: Member?, to state: inout State) {
         state.userSession = session
         state.currentMember = member
         state.myPage = MyFeature.State(member: member)
+        state.nicknameSetup.nickname = member?.nickname ?? ""
         AuthSessionStore.currentSession = session
         AuthSessionStore.currentMember = member
     }
@@ -118,7 +148,21 @@ struct AppFeature: Reducer {
         state.community = CommunityFeature.State()
         state.myPage = MyFeature.State()
         state.login = LoginFeature.State()
+        state.nicknameSetup = NicknameSetupFeature.State()
         state.userSession = nil
         state.currentMember = nil
+        state.needsNicknameSetup = false
+    }
+
+    private func evaluateNicknameRequirement(_ state: inout State) {
+        let trimmedNickname = state.currentMember?.nickname?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let sessionNeedsSetup = state.userSession?.isNewUser == true
+        let memberNeedsSetup = !trimmedNickname.isEmpty ? false : state.currentMember != nil
+
+        state.needsNicknameSetup = sessionNeedsSetup || memberNeedsSetup
+        if state.needsNicknameSetup {
+            state.nicknameSetup.nickname = trimmedNickname
+        }
     }
 }
