@@ -104,8 +104,12 @@ struct MyView: View {
                     ServiceSettingsView(
                         member: viewStore.member,
                         isUpdatingProfile: viewStore.isUpdatingProfile,
+                        isDeletingAccount: viewStore.isDeletingAccount,
                         onSaveProfile: { nickname, description in
                             viewStore.send(.updateProfile(nickname: nickname, description: description))
+                        },
+                        onWithdraw: { naverAccessToken in
+                            viewStore.send(.withdrawAccount(naverAccessToken: naverAccessToken))
                         }
                     )
                 }
@@ -743,11 +747,14 @@ private struct NoticeDetailView: View {
 private struct ServiceSettingsView: View {
     let member: Member?
     let isUpdatingProfile: Bool
+    let isDeletingAccount: Bool
     let onSaveProfile: (String, String) -> Void
+    let onWithdraw: (String?) -> Void
 
     @AppStorage("settings.push.enabled") private var isPushEnabled: Bool = true
     @AppStorage("settings.marketing.enabled") private var isMarketingEnabled: Bool = false
     @AppStorage("settings.location.enabled") private var isLocationEnabled: Bool = true
+    @State private var isShowingWithdrawConfirm = false
 
     var body: some View {
         List {
@@ -787,9 +794,37 @@ private struct ServiceSettingsView: View {
                     )
                 }
             }
+
+            Section {
+                Button("탈퇴하기", role: .destructive) {
+                    isShowingWithdrawConfirm = true
+                }
+                .disabled(isDeletingAccount)
+            }
         }
         .navigationTitle("서비스 설정")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(
+            "정말 탈퇴하시겠어요?",
+            isPresented: $isShowingWithdrawConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("탈퇴하기", role: .destructive) {
+                onWithdraw(nil)
+            }
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("탈퇴 시 계정 정보와 내 활동 정보가 삭제될 수 있어요.")
+        }
+        .overlay {
+            if isDeletingAccount {
+                ZStack {
+                    Color.black.opacity(0.08).ignoresSafeArea()
+                    ProgressView()
+                        .controlSize(.large)
+                }
+            }
+        }
     }
 }
 

@@ -13,6 +13,7 @@ struct MyFeature: Reducer {
         var isLoading: Bool = false
         var isUpdatingDisplay: Bool = false
         var isUpdatingProfile: Bool = false
+        var isDeletingAccount: Bool = false
         var errorMessage: String? = nil
         var successMessage: String? = nil
 
@@ -31,6 +32,8 @@ struct MyFeature: Reducer {
         case historyResponse(Result<[ReviewHistory], Error>)
         case updateProfile(nickname: String, description: String)
         case updateProfileResponse(Result<Member, Error>)
+        case withdrawAccount(naverAccessToken: String?)
+        case withdrawAccountResponse(Result<Void, Error>)
         case toggleHistoryDisplay(reviewId: Int)
         case updateHistoryDisplayResponse(Result<String, Error>, previousDisplayedReviewIds: Set<Int>)
         case recruitBoardActivity(RecruitBoardActivityFeature.Action)
@@ -148,6 +151,30 @@ struct MyFeature: Reducer {
 
             case let .updateProfileResponse(.failure(error)):
                 state.isUpdatingProfile = false
+                state.errorMessage = error.localizedDescription
+                return .none
+
+            case let .withdrawAccount(naverAccessToken):
+                guard !state.isDeletingAccount else { return .none }
+                state.isDeletingAccount = true
+                state.errorMessage = nil
+                state.successMessage = nil
+
+                return .run { send in
+                    do {
+                        try await memberAPIClient.deleteMember(naverAccessToken: naverAccessToken)
+                        await send(.withdrawAccountResponse(.success(())))
+                    } catch {
+                        await send(.withdrawAccountResponse(.failure(error)))
+                    }
+                }
+
+            case .withdrawAccountResponse(.success):
+                state.isDeletingAccount = false
+                return .send(.delegate(.logoutRequested))
+
+            case let .withdrawAccountResponse(.failure(error)):
+                state.isDeletingAccount = false
                 state.errorMessage = error.localizedDescription
                 return .none
 

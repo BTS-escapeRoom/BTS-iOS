@@ -95,6 +95,60 @@ struct MemberAPIClient: APIClient {
     func  getMyMembers() async throws -> Member {
         try await request("members/me")
     }
+
+    /// DELETE /v1/members 회원 탈퇴
+    func deleteMember(naverAccessToken: String? = nil) async throws {
+        let url = baseURL.appendingPathComponent("members")
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.addValue("*/*", forHTTPHeaderField: "Accept")
+
+        if let bearerToken {
+            request.addValue(bearerToken, forHTTPHeaderField: "Authorization")
+        }
+
+        let trimmedNaverToken = naverAccessToken?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !trimmedNaverToken.isEmpty {
+            request.addValue(trimmedNaverToken, forHTTPHeaderField: "naverAccessToken")
+        }
+
+#if DEBUG
+        print("[DEBUG] Request\n\(request.debugDescription)")
+#endif
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let responseString = String(data: data, encoding: .utf8) ?? "No response body"
+            let description = "\n[DEBUG] Error Status code: \(httpResponse.statusCode)\nResponse: \(responseString)"
+
+            if httpResponse.statusCode == 401 {
+                AuthSessionStore.clearAll()
+                Task { @MainActor in
+                    NotificationCenter.default.post(name: .authSessionExpired, object: nil)
+                }
+                throw URLError(
+                    .userAuthenticationRequired,
+                    userInfo: [NSLocalizedDescriptionKey: "로그인이 만료되었어요. 다시 로그인해주세요."]
+                )
+            }
+
+            throw URLError(
+                .badServerResponse,
+                userInfo: [NSLocalizedDescriptionKey: description]
+            )
+        }
+
+#if DEBUG
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("[DEBUG] Response\nfrom members:\n\(responseString)\n")
+        }
+#endif
+    }
 }
 
 //MARK: 댓글 API
