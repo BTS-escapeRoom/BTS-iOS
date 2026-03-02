@@ -9,8 +9,7 @@ struct CommunityWriteView: View {
     @State private var contactMethod: String = ""
     @State private var deadline: Date? = nil
     @State private var content: String = ""
-    @State private var showError: Bool = false
-    @State private var errorMessage: String = ""
+    @State private var toastMessage: String? = nil
     @State private var showThemeSelectView: Bool = false
     @State private var selectedTheme: Theme? = nil
     let themeStore = Store(initialState: ThemeFeature.State(), reducer: { ThemeFeature() })
@@ -101,8 +100,7 @@ struct CommunityWriteView: View {
                     Button(action: {
                         // 필수값 체크
                         guard !title.isEmpty, !content.isEmpty else {
-                            errorMessage = "제목과 모집 내용을 입력해주세요."
-                            showError = true
+                            toastMessage = "제목과 모집 내용을 입력해주세요."
                             return
                         }
                         // 날짜 변환
@@ -133,8 +131,7 @@ struct CommunityWriteView: View {
                                 _ = try await boardApiClient.createBoards(request)
                                 dismiss()
                             } catch {
-                                errorMessage = error.localizedDescription
-                                showError = true
+                                toastMessage = error.localizedDescription
                             }
                         }
                     }) {
@@ -159,9 +156,7 @@ struct CommunityWriteView: View {
                     }
                 }
             }
-            .alert(isPresented: $showError) {
-                Alert(title: Text("오류"), message: Text(errorMessage), dismissButton: .default(Text("확인")))
-            }
+            .appToast(message: $toastMessage, style: .error)
             .fullScreenCover(isPresented: $showThemeSelectView) {
                 ThemeSelectView(store: themeStore, selectedTheme: $selectedTheme)
             }
@@ -183,10 +178,21 @@ struct ThemeInfoCard: View {
     var body: some View {
         let difficulty = theme.difficulty
         HStack(alignment: .top, spacing: 12) {
-            AsyncImage(url: URL(string: theme.thumbnail)) { img in
-                img.resizable().scaledToFill()
-            } placeholder: {
-                Color.gray.opacity(0.1)
+            CachedAsyncImage(url: URL(string: theme.thumbnail)) { phase in
+                switch phase {
+                case .empty:
+                    Color.gray.opacity(0.1)
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                case .failure:
+                    Image(systemName: "photo")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.gray)
+                        .padding(16)
+                @unknown default:
+                    Color.gray.opacity(0.1)
+                }
             }
             .frame(width: 72, height: 72)
             .cornerRadius(10)

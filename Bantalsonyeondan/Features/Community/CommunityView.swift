@@ -138,23 +138,13 @@ struct CommunityView: View {
                     }
                     .zIndex(1)
                 }
-                .alert(
-                    "오류",
-                    isPresented: Binding(
-                        get: { viewStore.errorMessage != nil },
-                        set: { isPresented in
-                            if !isPresented {
-                                viewStore.send(.clearErrorMessage)
-                            }
-                        }
-                    )
-                ) {
-                    Button("확인", role: .cancel) {
-                        viewStore.send(.clearErrorMessage)
-                    }
-                } message: {
-                    Text(viewStore.errorMessage ?? "")
-                }
+                .appToast(
+                    message: Binding(
+                        get: { viewStore.errorMessage },
+                        set: { _ in viewStore.send(.clearErrorMessage) }
+                    ),
+                    style: .error
+                )
             }
         }
     }

@@ -64,6 +64,7 @@
 		51DF46AC2DAFDD2600FA49EB /* ThemeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46AA2DAFDD2600FA49EB /* ThemeView.swift */; };
 		51DF46AD2DAFDD2600FA49EB /* ThemeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46A92DAFDD2600FA49EB /* ThemeFeature.swift */; };
 		51DF46B12DAFFF3300FA49EB /* CustomSearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46B02DAFFF3300FA49EB /* CustomSearchBar.swift */; };
+		52E0A0022F5A100100AAA111 /* UIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E0A0012F5A100100AAA111 /* UIComponents.swift */; };
 		51DF46B32DE733CC00FA49EB /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46B22DE733CC00FA49EB /* LocationManager.swift */; };
 		51F384082F3F8A790096FA69 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 51F384072F3F8A790096FA69 /* ComposableArchitecture */; };
 /* End PBXBuildFile section */
@@ -148,6 +149,7 @@
 		51DF46AA2DAFDD2600FA49EB /* ThemeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeView.swift; sourceTree = "<group>"; };
 		51DF46B02DAFFF3300FA49EB /* CustomSearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSearchBar.swift; sourceTree = "<group>"; };
 		51DF46B22DE733CC00FA49EB /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		52E0A0012F5A100100AAA111 /* UIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIComponents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -340,6 +342,7 @@
 				516086A42CE4CB000094EAC9 /* NicknameSetupView.swift */,
 				516086A22CE4CAEA0094EAC9 /* NicknameSetupedView.swift */,
 				51DF46B02DAFFF3300FA49EB /* CustomSearchBar.swift */,
+				52E0A0012F5A100100AAA111 /* UIComponents.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -566,6 +569,7 @@
 				515857C92E9FCA81002ACE2C /* BoardDetailView.swift in Sources */,
 				515857CD2E9FCBDA002ACE2C /* BoardDetailFeature.swift in Sources */,
 				51DF46B12DAFFF3300FA49EB /* CustomSearchBar.swift in Sources */,
+				52E0A0022F5A100100AAA111 /* UIComponents.swift in Sources */,
 				51619C872D607FC800E8E866 /* City.swift in Sources */,
 				51619C932D66016600E8E866 /* BaseAPIClient.swift in Sources */,
 				5103A8AC2E4CB12C00234D0C /* CommunityFeature.swift in Sources */,

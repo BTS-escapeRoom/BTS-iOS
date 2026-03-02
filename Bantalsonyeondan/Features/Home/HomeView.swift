@@ -27,8 +27,7 @@ struct HomeView: View {
                                     Text(theme.title)
                                         .font(.headline)
                                     
-                                    // AsyncImage를 이용해 URL로부터 이미지 로딩
-                                    AsyncImage(url: URL(string: theme.thumbnail)) { phase in
+                                    CachedAsyncImage(url: URL(string: theme.thumbnail)) { phase in
                                         switch phase {
                                         case .empty:
                                             ProgressView()
@@ -40,17 +39,13 @@ struct HomeView: View {
                                                 .frame(width: 150, height: 150)
                                                 .clipped()
                                                 .cornerRadius(10)
-                                        case .failure(let error):
-                                            // 이미지 로딩 실패 시 기본 이미지 표시
+                                        case .failure:
                                             Image(systemName: "photo")
                                                 .resizable()
                                                 .aspectRatio(contentMode: .fill)
                                                 .frame(width: 150, height: 150)
                                                 .clipped()
                                                 .cornerRadius(10)
-//                                                .onAppear(perform: {
-//                                                    print("Failed to load image for URL \(theme.thumbnail):", error)
-//                                                })
                                         @unknown default:
                                             EmptyView()
                                         }
@@ -65,23 +60,13 @@ struct HomeView: View {
             .onAppear {
                 viewStore.send(.onAppear)
             }
-            .alert(
-                "오류",
-                isPresented: Binding(
-                    get: { viewStore.errorMessage != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            viewStore.send(.clearErrorMessage)
-                        }
-                    }
-                )
-            ) {
-                Button("확인", role: .cancel) {
-                    viewStore.send(.clearErrorMessage)
-                }
-            } message: {
-                Text(viewStore.errorMessage ?? "")
-            }
+            .appToast(
+                message: Binding(
+                    get: { viewStore.errorMessage },
+                    set: { _ in viewStore.send(.clearErrorMessage) }
+                ),
+                style: .error
+            )
         }
     }
 }

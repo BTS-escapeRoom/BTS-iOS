@@ -40,10 +40,6 @@ struct ThemeDetailView: View {
             HStack {
                 ForEach(Tab.allCases) { tab in
                     Button(action: {
-                        if tab == .review, !isAuthenticated {
-                            onRequireLogin()
-                            return
-                        }
                         selectedTab = tab
                     }) {
                         VStack(spacing: 4) {
@@ -60,12 +56,16 @@ struct ThemeDetailView: View {
             Divider()
             
             if selectedTab == .review {
-                ReviewDetailView(
-                    store: Store(initialState: ReviewFeature.State(themeId: themeInfo.id)) {
-                        ReviewFeature()
-                    }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if isAuthenticated {
+                    ReviewDetailView(
+                        store: Store(initialState: ReviewFeature.State(themeId: themeInfo.id)) {
+                            ReviewFeature()
+                        }
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    reviewLoginRequiredView
+                }
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -119,25 +119,51 @@ struct ThemeDetailView: View {
                     .padding(.top)
                 }
             }
-            Button(action: {
-                if let urlString = themeInfo.reservationUrl, let url = URL(string: urlString) {
-                    UIApplication.shared.open(url)
+            if selectedTab != .review {
+                Button(action: {
+                    if let urlString = themeInfo.reservationUrl, let url = URL(string: urlString) {
+                        UIApplication.shared.open(url)
+                    }
+                }) {
+                    Text("바로 예약")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.black)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
                 }
-            }) {
-                Text("바로 예약")
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.black)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
         }
+    }
+
+    private var reviewLoginRequiredView: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Text("로그인 후 다른 사람이 작성한\n리뷰를 확인해보세요!")
+                .font(.system(size: 12))
+                .foregroundColor(Color.gray)
+                .multilineTextAlignment(.center)
+
+            Button(action: {
+                onRequireLogin()
+            }) {
+                Text("로그인 하러 가기")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color.gray)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 8)
+                    .background(Color(white: 0.95))
+                    .cornerRadius(6)
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     var themeDetailView: some View {
         HStack(alignment: .top, spacing: 16) {
-            AsyncImage(url: URL(string: themeInfo.thumbnail)) { phase in
+            CachedAsyncImage(url: URL(string: themeInfo.thumbnail)) { phase in
                 switch phase {
                 case .empty:
                     Color.gray.opacity(0.1)

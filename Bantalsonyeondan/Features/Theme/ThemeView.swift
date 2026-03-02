@@ -12,6 +12,7 @@ struct ThemeView: View {
     let store: StoreOf<ThemeFeature>
     let isAuthenticated: Bool
     let onRequireLogin: () -> Void
+    @State private var shouldPresentLoginAfterSheetDismiss = false
 
     init(
         store: StoreOf<ThemeFeature>,
@@ -29,7 +30,7 @@ struct ThemeView: View {
                 CustomSearchBar(
                     text: viewStore.binding(
                         get: \.searchText,
-                        send: ThemeFeature.Action.reloadThemes
+                        send: ThemeFeature.Action.onSearchTextChanged
                     ),
                     placeholder: "원하는 테마 또는 업체명 검색"
                 )
@@ -77,6 +78,14 @@ struct ThemeView: View {
                     viewStore.send(.onSortOptionSelected(viewStore.sortOption))
                 }
             }
+            .onChange(of: viewStore.selectedThemeDetail == nil) { isDismissed in
+                guard isDismissed, shouldPresentLoginAfterSheetDismiss else { return }
+                shouldPresentLoginAfterSheetDismiss = false
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 300_000_000)
+                    onRequireLogin()
+                }
+            }
             .sheet(item: viewStore.binding(
                 get: \.selectedThemeDetail,
                 send: .dismissDetail)
@@ -85,35 +94,28 @@ struct ThemeView: View {
                     ThemeDetailView(
                         themeInfo: theme,
                         isAuthenticated: isAuthenticated,
-                        onRequireLogin: onRequireLogin,
+                        onRequireLogin: {
+                            shouldPresentLoginAfterSheetDismiss = true
+                            viewStore.send(.dismissDetail)
+                        },
                         onDismiss: {
                             viewStore.send(.dismissDetail)
                         }
                     )
                     .presentationDetents([.fraction(0.92)])
-                    .presentationDragIndicator(.visible)
+                    .presentationDragIndicator(.hidden)
                     .presentationBackground(.thickMaterial)
                 } else {
                     // Fallback on earlier versions
                 }
             }
-            .alert(
-                "오류",
-                isPresented: Binding(
-                    get: { viewStore.errorMessage != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            viewStore.send(.clearErrorMessage)
-                        }
-                    }
-                )
-            ) {
-                Button("확인", role: .cancel) {
-                    viewStore.send(.clearErrorMessage)
-                }
-            } message: {
-                Text(viewStore.errorMessage ?? "")
-            }
+            .appToast(
+                message: Binding(
+                    get: { viewStore.errorMessage },
+                    set: { _ in viewStore.send(.clearErrorMessage) }
+                ),
+                style: .error
+            )
         }
     }
 }
@@ -203,7 +205,7 @@ struct ThemeCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // 썸네일
-            AsyncImage(url: URL(string: theme.thumbnail)) { phase in
+            CachedAsyncImage(url: URL(string: theme.thumbnail)) { phase in
                 switch phase {
                 case .empty:
                     Color.gray.opacity(0.1)
@@ -287,7 +289,7 @@ enum SortOption: String, CaseIterable, Identifiable, Encodable {
     
     // ThemeView에서 사용할 옵션 (오래된순 제외)
     static var themeOptions: [SortOption] {
-        [.distance, .popular, .latest]
+        [.popular, .distance, .latest]
     }
     // CommunityView에서 사용할 옵션 (거리순 제외)
     static var communityOptions: [SortOption] {

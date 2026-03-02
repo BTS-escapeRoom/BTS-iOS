@@ -25,7 +25,7 @@ struct ThemeSelectView: View {
                 CustomSearchBar(
                     text: viewStore.binding(
                         get: \.searchText,
-                        send: ThemeFeature.Action.reloadThemes
+                        send: ThemeFeature.Action.onSearchTextChanged
                     ),
                     placeholder: "테마명, 지역명 검색"
                 )
@@ -77,7 +77,7 @@ struct ThemeSelectView: View {
             }
             .background(Color.white)
             .onAppear {
-                viewStore.send(.onSortOptionSelected(.popularity))
+                viewStore.send(.onSortOptionSelected(.popular))
             }
         }
     }
@@ -89,10 +89,21 @@ struct ThemeRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            AsyncImage(url: URL(string: theme.thumbnail)) { img in
-                img.resizable().scaledToFill()
-            } placeholder: {
-                Color.gray.opacity(0.1)
+            CachedAsyncImage(url: URL(string: theme.thumbnail)) { phase in
+                switch phase {
+                case .empty:
+                    Color.gray.opacity(0.1)
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                case .failure:
+                    Image(systemName: "photo")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.gray)
+                        .padding(12)
+                @unknown default:
+                    Color.gray.opacity(0.1)
+                }
             }
             .frame(width: 56, height: 56)
             .cornerRadius(8)

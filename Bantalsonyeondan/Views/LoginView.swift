@@ -21,60 +21,55 @@ struct LoginView: View {
     
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
-            VStack(spacing: 16) {
-                Spacer()
-                Image("icon-launch")
-                Spacer()
-                Text("소셜로그인으로 간편하게 시작해보세요.")
-                    .font(.title3)
-                    .foregroundColor(.gray)
-                Button {
-                    if UserApi.isKakaoTalkLoginAvailable() {
-                        viewStore.send(.kakaoLoginTapped)
-                    } else {
-                        viewStore.send(.kakaoAccountLoginTapped)
-                    }
-                } label : {
-                    Image("kakao_login_medium_narrow")
-                }
-                .disabled(viewStore.isLoading)
-                
-                Button {
-                    viewStore.send(.naverLoginTapped)
-                } label : {
-                    Image("naver_login")
-                }
-                .disabled(viewStore.isLoading)
-                
-                AppleSignInButton {
-                    viewStore.send(.appleLoginTapped)
-                }
-                .disabled(viewStore.isLoading)
+            ZStack {
+                Color(.systemBackground)
+                    .ignoresSafeArea()
 
-                if viewStore.isLoading {
-                    ProgressView()
-                }
-                
-                Spacer()
-            }
-            .padding()
-            .alert(
-                "로그인 실패",
-                isPresented: Binding(
-                    get: { viewStore.errorMessage != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            viewStore.send(.clearErrorMessage)
+                VStack(spacing: 16) {
+                    Spacer()
+                    Image("icon-launch")
+                    Spacer()
+                    Text("소셜로그인으로 간편하게 시작해보세요.")
+                        .font(.title3)
+                        .foregroundColor(.gray)
+                    Button {
+                        if UserApi.isKakaoTalkLoginAvailable() {
+                            viewStore.send(.kakaoLoginTapped)
+                        } else {
+                            viewStore.send(.kakaoAccountLoginTapped)
                         }
+                    } label : {
+                        Image("kakao_login_medium_narrow")
                     }
-                )
-            ) {
-                Button("확인", role: .cancel) {
-                    viewStore.send(.clearErrorMessage)
+                    .disabled(viewStore.isLoading)
+
+                    Button {
+                        viewStore.send(.naverLoginTapped)
+                    } label : {
+                        Image("naver_login")
+                    }
+                    .disabled(viewStore.isLoading)
+
+                    AppleSignInButton {
+                        viewStore.send(.appleLoginTapped)
+                    }
+                    .disabled(viewStore.isLoading)
+
+                    if viewStore.isLoading {
+                        ProgressView()
+                    }
+
+                    Spacer()
                 }
-            } message: {
-                Text(viewStore.errorMessage ?? "")
+                .padding()
             }
+            .appToast(
+                message: Binding(
+                    get: { viewStore.errorMessage },
+                    set: { _ in viewStore.send(.clearErrorMessage) }
+                ),
+                style: .error
+            )
         }
     }
 }
