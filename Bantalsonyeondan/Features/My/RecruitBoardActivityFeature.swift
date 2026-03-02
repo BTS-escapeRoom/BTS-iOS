@@ -317,20 +317,26 @@ struct RecruitBoardActivityView: View {
 private struct RecruitBoardActivityCard: View {
     let board: Board
 
-    private var deadlineText: String {
+    private var deadlineStatus: (text: String, isUrgent: Bool, isClosed: Bool) {
         guard
             let recruitDeadline = board.recruitDeadline,
             let date = ISO8601DateFormatter.iso8601WithOptionalFraction.date(from: recruitDeadline)
                 ?? ISO8601DateFormatter().date(from: recruitDeadline)
         else {
-            return "모집중"
+            return ("모집중", false, false)
         }
 
-        let days = Calendar.current.dateComponents([.day], from: .now, to: date).day ?? 0
-        if days < 0 {
-            return "모집 마감"
+        let interval = date.timeIntervalSinceNow
+        if interval <= 0 {
+            return ("모집 마감", false, true)
         }
-        return "마감 \(days)일 전"
+
+        if interval <= 60 * 60 * 24 {
+            return ("0시간 전", true, false)
+        }
+
+        let days = max(1, Int(ceil(interval / (60 * 60 * 24))))
+        return ("마감 \(days)일 전", false, false)
     }
 
     private var escapeDateText: String {
@@ -351,13 +357,41 @@ private struct RecruitBoardActivityCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(deadlineText)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Color(UIColor.systemGray))
+            HStack(spacing: 8) {
+                HStack(spacing: 4) {
+                    if deadlineStatus.isUrgent {
+                        Image(systemName: "clock.badge.exclamationmark")
+                            .font(.caption2)
+                    }
+                    Text(deadlineStatus.text)
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .foregroundStyle(
+                    deadlineStatus.isClosed
+                        ? Color(UIColor.systemGray)
+                        : (deadlineStatus.isUrgent ? Color.red : Color(UIColor.systemGray))
+                )
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
-                .background(Color(UIColor.systemGray5))
+                .background(
+                    deadlineStatus.isClosed
+                        ? Color(UIColor.systemGray6)
+                        : Color(UIColor.systemGray5)
+                )
                 .clipShape(RoundedRectangle(cornerRadius: 6))
+
+                if board.isPopular {
+                    Text("인기글")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color.green)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.green.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+
+                Spacer()
+            }
 
             Text(board.title)
                 .font(.system(size: 20, weight: .bold))
@@ -387,6 +421,32 @@ private struct RecruitBoardActivityCard: View {
             .padding(.vertical, 12)
             .background(Color(UIColor.systemGray6))
             .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            HStack(spacing: 6) {
+                Text(board.memberName)
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundStyle(Color(UIColor.systemGray))
+
+                if board.hit > 0 {
+                    Text("· 조회수 \(board.hit)")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundStyle(Color(UIColor.systemGray))
+                }
+
+                if board.likeCount > 0 {
+                    Text("· 관심 \(board.likeCount)")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundStyle(Color(UIColor.systemGray))
+                }
+
+                if board.commentCount > 0 {
+                    Text("· 댓글 \(board.commentCount)")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundStyle(Color(UIColor.systemGray))
+                }
+
+                Spacer()
+            }
         }
         .padding(16)
         .background(Color.white)

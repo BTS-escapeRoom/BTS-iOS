@@ -2,11 +2,40 @@ import SwiftUI
 import ComposableArchitecture
 
 struct CommunityWriteView: View {
+    private enum ContactMethodType: String, CaseIterable {
+        case openTalk = "OPEN_TALK"
+        case google = "GOOGLE"
+        case etc = "ETC"
+
+        var title: String {
+            switch self {
+            case .openTalk:
+                return "카카오 오픈톡"
+            case .google:
+                return "구글폼"
+            case .etc:
+                return "기타"
+            }
+        }
+
+        var placeholder: String {
+            switch self {
+            case .openTalk:
+                return "오픈톡 링크를 입력해주세요."
+            case .google:
+                return "구글폼 링크를 입력해주세요."
+            case .etc:
+                return "연락 방법을 입력해주세요. (선택)"
+            }
+        }
+    }
+
     @State private var title: String = ""
     @State private var recruitCount: String = ""
     @State private var escapeDate: Date? = nil
     @State private var isDateUndecided: Bool = false
-    @State private var contactMethod: String = ""
+    @State private var contactMethodType: ContactMethodType = .openTalk
+    @State private var contactUrl: String = ""
     @State private var deadline: Date? = nil
     @State private var content: String = ""
     @State private var toastMessage: String? = nil
@@ -53,11 +82,27 @@ struct CommunityWriteView: View {
                     VStack(alignment: .leading) {
                         Text("연락 방법")
                         HStack {
-                            Button("카카오 오픈톡") { contactMethod = "카카오 오픈톡" }
-                            Button("구글폼") { contactMethod = "구글폼" }
-                            Button("기타") { contactMethod = "기타" }
+                            ForEach(ContactMethodType.allCases, id: \.self) { type in
+                                Button(type.title) {
+                                    contactMethodType = type
+                                }
+                                .font(.caption)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(
+                                    contactMethodType == type
+                                        ? Color.black
+                                        : Color(.systemGray6)
+                                )
+                                .foregroundColor(
+                                    contactMethodType == type
+                                        ? .white
+                                        : .black
+                                )
+                                .cornerRadius(8)
+                            }
                         }
-                        TextField("연락처를 입력해주세요.", text: $contactMethod)
+                        TextField(contactMethodType.placeholder, text: $contactUrl)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                     }
 
@@ -103,6 +148,11 @@ struct CommunityWriteView: View {
                             toastMessage = "제목과 모집 내용을 입력해주세요."
                             return
                         }
+                        if contactMethodType != .etc &&
+                            contactUrl.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            toastMessage = "연락 링크를 입력해주세요."
+                            return
+                        }
                         // 날짜 변환
                         let isoFormatter = ISO8601DateFormatter()
                         let recruitDeadlineString = deadline != nil ? isoFormatter.string(from: deadline!) : nil
@@ -112,8 +162,7 @@ struct CommunityWriteView: View {
                         // themeId 변환
                         let themeId = selectedTheme?.id
                         // contact_url/contact_method 분리
-                        let contactUrl = contactMethod
-                        let contactMethodValue = contactMethod // 실제로는 버튼 선택값과 분리 필요
+                        let contactMethodValue = contactMethodType.rawValue
                         // BoardCreateRequest 생성
                         let request = BoardCreateRequest(
                             themeId: themeId,

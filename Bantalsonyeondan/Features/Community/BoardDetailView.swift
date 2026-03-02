@@ -141,7 +141,16 @@ struct BoardDetailView: View {
                             if let url = viewStore.detail?.contact_url, !url.isEmpty {
                                 HStack(spacing: 12) {
                                     Text("연락 링크").font(.caption).foregroundColor(.secondary)
-                                    Text(url).font(.caption)
+                                    Button {
+                                        guard let linkURL = URL(string: url) else { return }
+                                        UIApplication.shared.open(linkURL)
+                                    } label: {
+                                        Text(url)
+                                            .font(.caption)
+                                            .underline()
+                                            .foregroundStyle(Color.blue)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }

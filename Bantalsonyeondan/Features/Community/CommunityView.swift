@@ -155,6 +155,28 @@ struct BoardCardView: View {
     let board: Board
     
     // MARK: Helpers
+    private var deadlineStatus: (text: String, isUrgent: Bool, isClosed: Bool)? {
+        guard
+            let recruitDeadline = board.recruitDeadline,
+            let date = ISO8601DateFormatter.iso8601WithOptionalFraction.date(from: recruitDeadline)
+                ?? ISO8601DateFormatter().date(from: recruitDeadline)
+        else {
+            return nil
+        }
+
+        let interval = date.timeIntervalSinceNow
+        if interval <= 0 {
+            return ("모집 마감", false, true)
+        }
+
+        if interval <= 60 * 60 * 24 {
+            return ("0시간 전", true, false)
+        }
+
+        let days = max(1, Int(ceil(interval / (60 * 60 * 24))))
+        return ("마감 \(days)일 전", false, false)
+    }
+
     private var recruitPeopleText: String {
         if let people = board.recruitPeople {
             return "모집인원 \(people)명"
@@ -179,8 +201,46 @@ struct BoardCardView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // 상태 뱃지 (간단 예: 조회수 높으면 인기글)
-            if board.hit >= 100 {
+            HStack(spacing: 6) {
+                if let deadlineStatus {
+                    HStack(spacing: 4) {
+                        if deadlineStatus.isUrgent {
+                            Image(systemName: "clock.badge.exclamationmark")
+                                .font(.caption2)
+                        }
+                        Text(deadlineStatus.text)
+                            .font(.caption2)
+                    }
+                    .foregroundColor(
+                        deadlineStatus.isClosed
+                            ? Color(UIColor.systemGray)
+                            : (deadlineStatus.isUrgent ? Color.red : Color("cod_gray"))
+                    )
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .background(
+                        deadlineStatus.isClosed
+                            ? Color(UIColor.systemGray6)
+                            : Color(UIColor.systemGray5)
+                    )
+                    .cornerRadius(8)
+                }
+
+                if board.isPopular {
+                    Text("인기글")
+                        .font(.caption2)
+                        .foregroundColor(Color.green)
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .background(Color.green.opacity(0.12))
+                        .cornerRadius(8)
+                }
+
+                Spacer(minLength: 0)
+            }
+
+            // 상태 뱃지
+            if board.hit >= 100 && !board.isPopular {
                 HStack(spacing: 6) {
                     Text("인기글")
                         .font(.caption2)
@@ -221,9 +281,24 @@ struct BoardCardView: View {
                 Text(board.memberName)
                     .font(.caption2)
                     .foregroundColor(.secondary)
-                Text("· 조회수 \(board.hit)")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
+
+                if board.hit > 0 {
+                    Text("· 조회수 \(board.hit)")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                }
+
+                if board.likeCount > 0 {
+                    Text("· 관심 \(board.likeCount)")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                }
+
+                if board.commentCount > 0 {
+                    Text("· 댓글 \(board.commentCount)")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                }
                 Spacer()
             }
         }

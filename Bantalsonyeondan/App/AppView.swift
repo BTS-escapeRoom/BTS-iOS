@@ -54,12 +54,13 @@ struct AppView: View {
                             store: store,
                             isAuthenticated: viewStore.isAuthenticated,
                             onRequireLogin: { context in
-                                loginRequiredContext = context
                                 switch context {
                                 case .community:
+                                    loginRequiredContext = context
                                     pendingTabAfterLogin = .community
                                 case .myPage:
                                     pendingTabAfterLogin = .myPage
+                                    isShowingLoginView = true
                                 }
                             }
                         )
