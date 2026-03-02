@@ -8,6 +8,7 @@
 import UIKit
 import Combine
 import KakaoSDKUser
+import KakaoSDKAuth
 import AuthenticationServices
 
 extension UserApi: UserApiType {
@@ -41,13 +42,38 @@ extension UserApi: UserApiType {
     @MainActor
     func loginWithKakaoTalkAsync() async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
-            self.loginWithKakaoTalk { token, error in
-                if let error = error {
+            let lock = NSLock()
+            var didResume = false
+
+            func resumeOnce(with result: Result<String, Error>) {
+                lock.lock()
+                defer { lock.unlock() }
+                guard !didResume else { return }
+                didResume = true
+
+                switch result {
+                case let .success(token):
+                    continuation.resume(returning: token)
+                case let .failure(error):
                     continuation.resume(throwing: error)
-                } else if let token = token {
-                    continuation.resume(returning: token.accessToken)
+                }
+            }
+
+            self.loginWithKakaoTalk { token, error in
+                if let error {
+                    resumeOnce(with: .failure(error))
+                } else if let token {
+                    resumeOnce(with: .success(token.accessToken))
                 } else {
-                    continuation.resume(throwing: NSError(domain: "KakaoLogin", code: -1, userInfo: [NSLocalizedDescriptionKey: "No token received"]))
+                    resumeOnce(
+                        with: .failure(
+                            NSError(
+                                domain: "KakaoLogin",
+                                code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "No token received"]
+                            )
+                        )
+                    )
                 }
             }
         }
@@ -56,13 +82,38 @@ extension UserApi: UserApiType {
     @MainActor
     func loginWithKakaoAccountAsync() async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
-            self.loginWithKakaoAccount { token, error in
-                if let error = error {
+            let lock = NSLock()
+            var didResume = false
+
+            func resumeOnce(with result: Result<String, Error>) {
+                lock.lock()
+                defer { lock.unlock() }
+                guard !didResume else { return }
+                didResume = true
+
+                switch result {
+                case let .success(token):
+                    continuation.resume(returning: token)
+                case let .failure(error):
                     continuation.resume(throwing: error)
-                } else if let token = token {
-                    continuation.resume(returning: token.accessToken)
+                }
+            }
+
+            self.loginWithKakaoAccount { token, error in
+                if let error {
+                    resumeOnce(with: .failure(error))
+                } else if let token {
+                    resumeOnce(with: .success(token.accessToken))
                 } else {
-                    continuation.resume(throwing: NSError(domain: "KakaoLogin", code: -1, userInfo: [NSLocalizedDescriptionKey: "No token received"]))
+                    resumeOnce(
+                        with: .failure(
+                            NSError(
+                                domain: "KakaoLogin",
+                                code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "No token received"]
+                            )
+                        )
+                    )
                 }
             }
         }

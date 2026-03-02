@@ -30,7 +30,14 @@ struct AppFeature: Reducer {
         var currentMember: Member? = AuthSessionStore.currentMember
         var needsNicknameSetup: Bool = false
 
-        var isAuthenticated: Bool { userSession != nil }
+        var isAuthenticated: Bool {
+            guard let token = userSession?.accessToken
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+                  !token.isEmpty else {
+                return false
+            }
+            return true
+        }
         var shouldShowNicknameSetup: Bool { isAuthenticated && needsNicknameSetup }
     }
     
@@ -90,7 +97,7 @@ struct AppFeature: Reducer {
 
             case let .selectTab(tab):
                 state.selectedTab = tab
-                if tab == .myPage {
+                if tab == .myPage, state.isAuthenticated {
                     return .send(.myPage(.refresh))
                 }
                 return .none
@@ -135,18 +142,25 @@ struct AppFeature: Reducer {
     }
 
     private func restoreSessionState(_ state: inout State) {
-        state.userSession = AuthSessionStore.currentSession
+        state.userSession = normalizedSession(AuthSessionStore.currentSession)
         state.currentMember = AuthSessionStore.currentMember
+
+        if state.userSession == nil {
+            AuthSessionStore.currentSession = nil
+            AuthSessionStore.currentMember = nil
+            state.currentMember = nil
+        }
+
         state.myPage.member = state.currentMember
         state.nicknameSetup.nickname = state.currentMember?.nickname ?? ""
     }
 
     private func applyLogin(session: UserSession, member: Member?, to state: inout State) {
-        state.userSession = session
+        state.userSession = normalizedSession(session)
         state.currentMember = member
         state.myPage = MyFeature.State(member: member)
         state.nicknameSetup.nickname = member?.nickname ?? ""
-        AuthSessionStore.currentSession = session
+        AuthSessionStore.currentSession = state.userSession
         AuthSessionStore.currentMember = member
     }
 
@@ -173,5 +187,23 @@ struct AppFeature: Reducer {
         if state.needsNicknameSetup {
             state.nicknameSetup.nickname = trimmedNickname
         }
+    }
+
+    private func normalizedSession(_ session: UserSession?) -> UserSession? {
+        guard let session else { return nil }
+        let normalizedToken = session.accessToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedToken.isEmpty else { return nil }
+
+        guard normalizedToken != session.accessToken else {
+            return session
+        }
+
+        return UserSession(
+            accessToken: normalizedToken,
+            refreshToken: session.refreshToken,
+            memberId: session.memberId,
+            role: session.role,
+            isNewUser: session.isNewUser
+        )
     }
 }

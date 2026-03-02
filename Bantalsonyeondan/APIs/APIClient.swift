@@ -8,6 +8,7 @@
 import Foundation
 import KakaoSDKUser
 import KakaoSDKAuth
+import KakaoSDKCommon
 import AuthenticationServices
 
 //MARK: APIClient
@@ -127,13 +128,9 @@ struct MemberAPIClient: APIClient {
             let description = "\n[DEBUG] Error Status code: \(httpResponse.statusCode)\nResponse: \(responseString)"
 
             if httpResponse.statusCode == 401 {
-                AuthSessionStore.clearAll()
-                Task { @MainActor in
-                    NotificationCenter.default.post(name: .authSessionExpired, object: nil)
-                }
                 throw URLError(
                     .userAuthenticationRequired,
-                    userInfo: [NSLocalizedDescriptionKey: "로그인이 만료되었어요. 다시 로그인해주세요."]
+                    userInfo: [NSLocalizedDescriptionKey: description]
                 )
             }
 
@@ -281,34 +278,22 @@ struct BoardAPIClient: APIClient {
 struct UserAPIClient: APIClient {
     /// 카카오톡 로그인
     func loginWithKakaoTalkAsync() async throws -> AuthResponse {
-        let accessToken = try await UserApi.shared.loginWithKakaoTalkAsync()
-        let userId = try await fetchCurrentKakaoUserId(accessToken: accessToken)
-        return try await login(
-            provider: "kakao",
-            body: AppSocialLoginRequest(
-                code: accessToken,
-                accessToken: accessToken,
-                id: userId,
-                state: nil,
-                nonce: nil
-            )
-        )
+        do {
+            let accessToken = try await UserApi.shared.loginWithKakaoTalkAsync()
+            return try await loginWithKakao(accessToken: accessToken)
+        } catch {
+            guard shouldFallbackToKakaoAccount(error) else {
+                throw error
+            }
+            let accessToken = try await UserApi.shared.loginWithKakaoAccountAsync()
+            return try await loginWithKakao(accessToken: accessToken)
+        }
     }
 
     /// 카카오 계정 로그인
     func loginWithKakaoAccountAsync() async throws -> AuthResponse {
         let accessToken = try await UserApi.shared.loginWithKakaoAccountAsync()
-        let userId = try await fetchCurrentKakaoUserId(accessToken: accessToken)
-        return try await login(
-            provider: "kakao",
-            body: AppSocialLoginRequest(
-                code: accessToken,
-                accessToken: accessToken,
-                id: userId,
-                state: nil,
-                nonce: nil
-            )
-        )
+        return try await loginWithKakao(accessToken: accessToken)
     }
 
     /// 네이버 로그인: Authorization Code + State 획득 후 서버 로그인
@@ -351,6 +336,30 @@ struct UserAPIClient: APIClient {
 
     private func login(provider: String, body: AppSocialLoginRequest) async throws -> AuthResponse {
         try await request("auth/login/\(provider)", method: "POST", body: body)
+    }
+
+    private func loginWithKakao(accessToken: String) async throws -> AuthResponse {
+        let userId = try await fetchCurrentKakaoUserId(accessToken: accessToken)
+        return try await login(
+            provider: "kakao",
+            body: AppSocialLoginRequest(
+                code: accessToken,
+                accessToken: accessToken,
+                id: userId,
+                state: nil,
+                nonce: nil
+            )
+        )
+    }
+
+    private func shouldFallbackToKakaoAccount(_ error: Error) -> Bool {
+        guard let sdkError = error as? SdkError else {
+            return false
+        }
+        if case let .ClientFailed(reason, _) = sdkError {
+            return reason == .TokenNotFound || reason == .NotSupported
+        }
+        return false
     }
 
     private func fetchCurrentKakaoUserId(accessToken: String) async throws -> Int64 {

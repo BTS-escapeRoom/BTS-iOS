@@ -7,15 +7,12 @@
 
 import SwiftUI
 import ComposableArchitecture
-import KakaoSDKCommon
-import KakaoSDKAuth
 
 struct AppView: View {
     let store: StoreOf<AppFeature>
-    
+        
     init(store: StoreOf<AppFeature>) {
         self.store = store
-        KakaoSDK.initSDK(appKey: "a93ca2d555bc0d7e5195bdfb2c8ecdc1")
     }
     
     var body: some View {
@@ -54,20 +51,6 @@ struct AppView: View {
                 viewStore.send(.sessionExpired)
             }
         }
-        .onOpenURL { url in
-            handleOpenURL(url)
-        }
-    }
-    
-    /// 외부 로그인 콜백 URL 처리: 카카오 분기
-    private func handleOpenURL(_ url: URL) {
-        // 1) 카카오톡 로그인 콜백
-        if AuthApi.isKakaoTalkLoginUrl(url) {
-            _ = AuthController.handleOpenUrl(url: url)
-            return
-        }
-
-        // 그 외 다른 딥링크가 있다면 여기서 추가 처리
     }
     
     struct BottomToolBar: View {

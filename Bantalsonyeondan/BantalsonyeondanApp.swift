@@ -6,47 +6,31 @@
 //
 
 import SwiftUI
-
-//@main
-//struct BantalsonyeondanApp: App {
-//    var body: some Scene {
-//        WindowGroup {
-////            LoginView()
-//
-//        }
-//    }
-//}
-import SwiftUI
 import ComposableArchitecture
+import KakaoSDKCommon
+import KakaoSDKAuth
+
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey : Any] = [:]
+    ) -> Bool {
+        guard AuthApi.isKakaoTalkLoginUrl(url) else { return false }
+        return AuthController.handleOpenUrl(url: url)
+    }
+}
 
 @main
 struct MyApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
+    init() {
+        KakaoSDK.initSDK(appKey: "a93ca2d555bc0d7e5195bdfb2c8ecdc1")
+    }
+
     var body: some Scene {
         WindowGroup {
-//            APITestView(
-//                store: Store(initialState: TestFeature.State()) {
-//                    TestFeature()
-//                        .dependency(\.reviewAPIClient, ReviewAPIClient())
-//                        .dependency(\.memberAPIClient, MemberAPIClient())
-//                        .dependency(\.commentAPIClient, CommentAPIClient())
-//                        .dependency(\.themeAPIClient, ThemeAPIClient())
-//                        .dependency(\.boardAPIClient, BoardAPIClient())
-//                        .dependency(\.storeAPIClient, StoreAPIClient())
-//                        .dependency(\.homeAPIClient, HomeAPIClient())
-//                        .dependency(\.genreAPIClient, GenreAPIClient())
-//                        .dependency(\.cityAPIClient, CityAPIClient())
-//                }
-//            )
-//            HomeView(
-//                store: Store(
-//                    initialState: HomeFeature.State()
-//                ) {
-//                    HomeFeature()
-//                }
-//            )
-// -----------------------------
-//            LoginView()
-            
             AppView(
                 store: Store(
                     initialState: AppFeature.State()
@@ -58,6 +42,11 @@ struct MyApp: App {
                 UIToolbar.appearance().setBackgroundImage(UIImage(), forToolbarPosition: .any, barMetrics: .default)
                 UIToolbar.appearance().shadowImage(forToolbarPosition: .any)
                 UIToolbar.appearance().barTintColor = .white
+            }
+            .onOpenURL { url in
+                if AuthApi.isKakaoTalkLoginUrl(url) {
+                    _ = AuthController.handleOpenUrl(url: url)
+                }
             }
         }
     }

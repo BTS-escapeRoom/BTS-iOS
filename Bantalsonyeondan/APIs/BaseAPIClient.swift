@@ -96,16 +96,9 @@ extension BaseAPIClientProtocol {
             let description = "\n[DEBUG] Error Status code: \(httpResponse.statusCode)\nResponse: \(responseString)"
 
             if httpResponse.statusCode == 401 {
-                AuthSessionStore.clearAll()
-                Task { @MainActor in
-                    NotificationCenter.default.post(name: .authSessionExpired, object: nil)
-                }
-
                 let unauthorizedError = URLError(
                     .userAuthenticationRequired,
-                    userInfo: [
-                        NSLocalizedDescriptionKey: "로그인이 만료되었어요. 다시 로그인해주세요."
-                    ]
+                    userInfo: [NSLocalizedDescriptionKey: description]
                 )
 #if DEBUG
                 print("[DEBUG] Response\nfrom \(path):\n\(description)\n")
