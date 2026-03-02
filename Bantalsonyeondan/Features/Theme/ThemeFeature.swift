@@ -10,12 +10,15 @@ import Foundation
 
 struct ThemeFeature: Reducer {
     private var locationManager = LocationManager()
-    private enum CancelID { case search }
+    private enum CancelID {
+        case searchInput
+        case themeLoad
+        case distanceLocation
+    }
     private let distanceCoordinateCacheAge: TimeInterval = 60 * 60 * 24
     private struct ResolvedCoordinate {
         let latitude: Double?
         let longitude: Double?
-        let shouldCache: Bool
     }
 
     struct State: Equatable {
@@ -25,20 +28,24 @@ struct ThemeFeature: Reducer {
         var totalPage: Int = 0
         var isLoading: Bool = false
         var selectedThemeDetail: ThemeDetail? = nil
-        var sortOption: SortOption = .distance
+        var sortOption: SortOption = .popular
         var cachedLatitude: Double? = nil
         var cachedLongitude: Double? = nil
+        var isResolvingDistanceCoordinate: Bool = false
+        var shouldRefreshWithDistanceCoordinate: Bool = false
         var errorMessage: String? = nil
     }
     
     enum Action {
         case fetchThemesResponse(Result<ThemeResponse, Error>, requestedPage: Int)
         case fetchThemeDetailResponse(Result<ThemeDetail, Error>)
+        case onSearchTextChanged(String)
         case reloadThemes(String)
         case onSortOptionSelected(SortOption)
         case onLoadNextPage
         case themeTapped(themeId: Int)
-        case cacheDistanceCoordinate(latitude: Double, longitude: Double)
+        case distanceCoordinateResolved(latitude: Double, longitude: Double)
+        case distanceCoordinateFailed
         case dismissDetail
         case clearErrorMessage
     }
@@ -47,10 +54,23 @@ struct ThemeFeature: Reducer {
     
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
         switch action {
+        case let .onSearchTextChanged(keyword):
+            state.searchText = keyword
+            return .run { send in
+                do {
+                    try await Task.sleep(for: .milliseconds(300))
+                    await send(.reloadThemes(keyword))
+                } catch is CancellationError {
+                    return
+                }
+            }
+            .cancellable(id: CancelID.searchInput, cancelInFlight: true)
+
         case let .reloadThemes(keyword):
             state.searchText = keyword
             state.nextPage = 0
             state.isLoading = true
+            state.shouldRefreshWithDistanceCoordinate = false
             state.errorMessage = nil
             let requestedPage = 1
             let currentSortOption = state.sortOption
@@ -61,27 +81,24 @@ struct ThemeFeature: Reducer {
                 state.cachedLatitude = cachedCoordinate.latitude
                 state.cachedLongitude = cachedCoordinate.longitude
             }
+
+            let shouldResolveDistanceCoordinate = currentSortOption == .distance
+                && (state.cachedLatitude == nil || state.cachedLongitude == nil)
+                && !state.isResolvingDistanceCoordinate
+            if shouldResolveDistanceCoordinate {
+                state.isResolvingDistanceCoordinate = true
+            }
+
             let cachedLatitude = state.cachedLatitude
             let cachedLongitude = state.cachedLongitude
-            return .run { send in
+            let locationManager = self.locationManager
+            let loadThemesEffect: Effect<Action> = .run { send in
                 do {
-                    try await Task.sleep(for: .milliseconds(300))
-                    let coordinate = await resolveCoordinate(
+                    let coordinate = resolveCoordinate(
                         for: currentSortOption,
                         cachedLatitude: cachedLatitude,
                         cachedLongitude: cachedLongitude
                     )
-                    if coordinate.shouldCache,
-                       let latitude = coordinate.latitude,
-                       let longitude = coordinate.longitude {
-                        await send(
-                            .cacheDistanceCoordinate(
-                                latitude: latitude,
-                                longitude: longitude
-                            )
-                        )
-                    }
-
                     let themeResponse = try await themeApiClient.fetchThemes(
                         ThemeRequest(keyword: currentKeyword.isEmpty ? nil : currentKeyword,
                                      sort: currentSortOption,
@@ -97,7 +114,28 @@ struct ThemeFeature: Reducer {
                     await send(.fetchThemesResponse(.failure(error), requestedPage: requestedPage))
                 }
             }
-            .cancellable(id: CancelID.search, cancelInFlight: true)
+            .cancellable(id: CancelID.themeLoad, cancelInFlight: true)
+
+            guard shouldResolveDistanceCoordinate else {
+                return loadThemesEffect
+            }
+
+            let loadDistanceCoordinateEffect: Effect<Action> = .run { send in
+                do {
+                    let coordinate = try await locationManager.getLocation(maxCacheAge: distanceCoordinateCacheAge)
+                    await send(
+                        .distanceCoordinateResolved(
+                            latitude: coordinate.latitude,
+                            longitude: coordinate.longitude
+                        )
+                    )
+                } catch {
+                    await send(.distanceCoordinateFailed)
+                }
+            }
+            .cancellable(id: CancelID.distanceLocation, cancelInFlight: true)
+
+            return .merge(loadThemesEffect, loadDistanceCoordinateEffect)
 
         case let .onSortOptionSelected(sortOption):
             state.sortOption = sortOption
@@ -117,22 +155,11 @@ struct ThemeFeature: Reducer {
             let cachedLongitude = state.cachedLongitude
             return .run { send in
                 do {
-                    let coordinate = await resolveCoordinate(
+                    let coordinate = resolveCoordinate(
                         for: currentSortOption,
                         cachedLatitude: cachedLatitude,
                         cachedLongitude: cachedLongitude
                     )
-                    if coordinate.shouldCache,
-                       let latitude = coordinate.latitude,
-                       let longitude = coordinate.longitude {
-                        await send(
-                            .cacheDistanceCoordinate(
-                                latitude: latitude,
-                                longitude: longitude
-                            )
-                        )
-                    }
-
                     let themeResponse = try await themeApiClient.fetchThemes(
                         ThemeRequest(keyword: currentKeyword.isEmpty ? nil : currentKeyword,
                                      sort: currentSortOption,
@@ -160,9 +187,21 @@ struct ThemeFeature: Reducer {
             state.selectedThemeDetail = nil
             return .none
 
-        case let .cacheDistanceCoordinate(latitude, longitude):
+        case let .distanceCoordinateResolved(latitude, longitude):
             state.cachedLatitude = latitude
             state.cachedLongitude = longitude
+            state.isResolvingDistanceCoordinate = false
+            guard state.sortOption == .distance else {
+                return .none
+            }
+            if state.isLoading {
+                state.shouldRefreshWithDistanceCoordinate = true
+                return .none
+            }
+            return .send(.reloadThemes(state.searchText))
+
+        case .distanceCoordinateFailed:
+            state.isResolvingDistanceCoordinate = false
             return .none
 
         case let .fetchThemesResponse(.success(themeResponse), requestedPage):
@@ -175,6 +214,11 @@ struct ThemeFeature: Reducer {
                 state.themes = themeResponse.themes
             } else {
                 state.themes += themeResponse.themes
+            }
+
+            if state.shouldRefreshWithDistanceCoordinate, state.sortOption == .distance {
+                state.shouldRefreshWithDistanceCoordinate = false
+                return .send(.reloadThemes(state.searchText))
             }
             return .none
 
@@ -202,27 +246,18 @@ struct ThemeFeature: Reducer {
         for sortOption: SortOption,
         cachedLatitude: Double?,
         cachedLongitude: Double?
-    ) async -> ResolvedCoordinate {
+    ) -> ResolvedCoordinate {
         guard sortOption == .distance else {
-            return .init(latitude: nil, longitude: nil, shouldCache: false)
+            return .init(latitude: nil, longitude: nil)
         }
 
         if let cachedLatitude, let cachedLongitude {
             return .init(
                 latitude: cachedLatitude,
-                longitude: cachedLongitude,
-                shouldCache: false
+                longitude: cachedLongitude
             )
         }
 
-        if let coordinate = try? await locationManager.getLocation(maxCacheAge: distanceCoordinateCacheAge) {
-            return .init(
-                latitude: coordinate.latitude,
-                longitude: coordinate.longitude,
-                shouldCache: true
-            )
-        }
-
-        return .init(latitude: nil, longitude: nil, shouldCache: false)
+        return .init(latitude: nil, longitude: nil)
     }
 }

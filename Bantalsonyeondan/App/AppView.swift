@@ -12,7 +12,6 @@ struct AppView: View {
     enum LoginRequiredContext {
         case community
         case myPage
-        case review
 
         var message: String {
             switch self {
@@ -20,8 +19,6 @@ struct AppView: View {
                 return "커뮤니티는 로그인 후 이용할 수 있어요."
             case .myPage:
                 return "나의 탈출은 로그인 후 이용할 수 있어요."
-            case .review:
-                return "리뷰는 로그인 후 이용할 수 있어요."
             }
         }
     }
@@ -63,8 +60,6 @@ struct AppView: View {
                                     pendingTabAfterLogin = .community
                                 case .myPage:
                                     pendingTabAfterLogin = .myPage
-                                case .review:
-                                    pendingTabAfterLogin = nil
                                 }
                             }
                         )
@@ -109,17 +104,22 @@ struct AppView: View {
             }
             .fullScreenCover(isPresented: $isShowingLoginView) {
                 NavigationStack {
-                    LoginView(
-                        store: store.scope(
-                            state: \.login,
-                            action: \.login
+                    ZStack {
+                        Color(.systemBackground)
+                            .ignoresSafeArea()
+
+                        LoginView(
+                            store: store.scope(
+                                state: \.login,
+                                action: \.login
+                            )
                         )
-                    )
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button("닫기") {
-                                isShowingLoginView = false
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarLeading) {
+                                Button("닫기") {
+                                    isShowingLoginView = false
+                                }
                             }
                         }
                     }
@@ -201,8 +201,8 @@ struct AppView: View {
                 store: store.scope(state: \.theme, action: \.theme),
                 isAuthenticated: viewStore.isAuthenticated,
                 onRequireLogin: {
-                    loginRequiredContext = .review
                     pendingTabAfterLogin = nil
+                    isShowingLoginView = true
                 }
             )
         case .community:

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct CustomSearchBar: UIViewRepresentable {
     @Binding var text: String
@@ -22,13 +23,26 @@ struct CustomSearchBar: UIViewRepresentable {
             let color = UIColor(named: "Mono-05")!
             searchBar.searchTextField.layer.borderColor = color.cgColor
             searchBar.searchTextField.tintColor = color
+            searchBar.showsBookmarkButton = true
             guard let leftIconView = searchBar.searchTextField.leftView as? UIImageView else { return }
             leftIconView.image = leftIconView.image?.withRenderingMode(.alwaysTemplate)
             leftIconView.tintColor = color
         }
+
+        func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+            searchBar.showsBookmarkButton = false
+        }
         
         func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
             text = searchText
+        }
+
+        func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+            searchBar.resignFirstResponder()
+        }
+
+        func searchBarBookmarkButtonClicked(_ searchBar: UISearchBar) {
+            searchBar.resignFirstResponder()
         }
         
         // 추가적인 delegate 메서드 구현 가능 (예: 검색 버튼 클릭, 취소 버튼 등)
@@ -49,6 +63,11 @@ struct CustomSearchBar: UIViewRepresentable {
         searchBar.tintColor = UIColor(named: "oslo_gray")
         searchBar.placeholder = placeholder
         searchBar.backgroundImage = UIImage()
+        searchBar.returnKeyType = .search
+        searchBar.showsBookmarkButton = false
+        if let dismissIcon = UIImage(systemName: "keyboard.chevron.compact.down") {
+            searchBar.setImage(dismissIcon, for: .bookmark, state: .normal)
+        }
         return searchBar
     }
     
@@ -56,4 +75,3 @@ struct CustomSearchBar: UIViewRepresentable {
         uiView.text = text
     }
 }
-
