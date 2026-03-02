@@ -101,7 +101,13 @@ struct MyView: View {
                     NoticeListView()
                 }
                 .navigationDestination(isPresented: $isShowingServiceSettings) {
-                    ServiceSettingsView()
+                    ServiceSettingsView(
+                        member: viewStore.member,
+                        isUpdatingProfile: viewStore.isUpdatingProfile,
+                        onSaveProfile: { nickname, description in
+                            viewStore.send(.updateProfile(nickname: nickname, description: description))
+                        }
+                    )
                 }
                 .confirmationDialog(
                     "로그아웃 하시겠어요?",
@@ -126,21 +132,23 @@ struct MyView: View {
                     viewStore.send(.onAppear)
                 }
                 .alert(
-                    "알림",
+                    viewStore.errorMessage == nil ? "완료" : "알림",
                     isPresented: Binding(
-                        get: { viewStore.errorMessage != nil },
+                        get: { viewStore.errorMessage != nil || viewStore.successMessage != nil },
                         set: { isPresented in
                             if !isPresented {
                                 viewStore.send(.clearErrorMessage)
+                                viewStore.send(.clearSuccessMessage)
                             }
                         }
                     )
                 ) {
                     Button("확인", role: .cancel) {
                         viewStore.send(.clearErrorMessage)
+                        viewStore.send(.clearSuccessMessage)
                     }
                 } message: {
-                    Text(viewStore.errorMessage ?? "")
+                    Text(viewStore.errorMessage ?? viewStore.successMessage ?? "")
                 }
             }
         }
@@ -240,6 +248,7 @@ struct MyView: View {
         case .logout:
             isShowingLogoutDialog = true
         case .serviceSettings:
+            viewStore.send(.refresh)
             isShowingServiceSettings = true
         }
     }
@@ -732,12 +741,29 @@ private struct NoticeDetailView: View {
 
 // MARK: - Service Settings
 private struct ServiceSettingsView: View {
+    let member: Member?
+    let isUpdatingProfile: Bool
+    let onSaveProfile: (String, String) -> Void
+
     @AppStorage("settings.push.enabled") private var isPushEnabled: Bool = true
     @AppStorage("settings.marketing.enabled") private var isMarketingEnabled: Bool = false
     @AppStorage("settings.location.enabled") private var isLocationEnabled: Bool = true
 
     var body: some View {
         List {
+            Section("프로필") {
+                NavigationLink("프로필 편집") {
+                    ProfileEditView(
+                        member: member,
+                        isSaving: isUpdatingProfile,
+                        onSave: onSaveProfile
+                    )
+                }
+                NavigationLink("계정 정보") {
+                    AccountInfoView(member: member)
+                }
+            }
+
             Section("알림 설정") {
                 Toggle("푸시 알림", isOn: $isPushEnabled)
                 Toggle("마케팅 알림", isOn: $isMarketingEnabled)
@@ -764,6 +790,103 @@ private struct ServiceSettingsView: View {
         }
         .navigationTitle("서비스 설정")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct ProfileEditView: View {
+    let member: Member?
+    let isSaving: Bool
+    let onSave: (String, String) -> Void
+
+    @State private var nickname: String = ""
+    @State private var description: String = ""
+
+    var body: some View {
+        List {
+            Section("기본 정보") {
+                TextField("닉네임 (2~10자)", text: $nickname)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                TextField("한 줄 소개", text: $description, axis: .vertical)
+                    .lineLimit(3...5)
+            }
+
+            Section {
+                Button {
+                    onSave(trimmedNickname, trimmedDescription)
+                } label: {
+                    if isSaving {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Text("저장하기")
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .disabled(!isNicknameValid || isSaving)
+            } footer: {
+                Text("닉네임은 공백 제외 2~10자로 입력해주세요.")
+            }
+        }
+        .navigationTitle("프로필 편집")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            nickname = member?.nickname ?? ""
+            description = member?.description ?? ""
+        }
+    }
+
+    private var trimmedNickname: String {
+        nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedDescription: String {
+        description.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isNicknameValid: Bool {
+        (2...10).contains(trimmedNickname.count)
+    }
+}
+
+private struct AccountInfoView: View {
+    let member: Member?
+
+    var body: some View {
+        List {
+            Section("계정") {
+                LabeledContent("회원 번호", value: member.map { String($0.id) } ?? "-")
+                LabeledContent("닉네임", value: member?.nickname ?? "-")
+                LabeledContent("연동 계정", value: socialTypeText(member?.socialType))
+                LabeledContent("권한", value: roleText(member?.role))
+            }
+        }
+        .navigationTitle("계정 정보")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func socialTypeText(_ value: String?) -> String {
+        switch value?.uppercased() {
+        case "KAKAO":
+            return "카카오"
+        case "NAVER":
+            return "네이버"
+        case "APPLE":
+            return "애플"
+        default:
+            return "-"
+        }
+    }
+
+    private func roleText(_ value: String?) -> String {
+        switch value {
+        case "Role.ROLE_ADMIN":
+            return "관리자"
+        case "Role.ROLE_USER":
+            return "일반 사용자"
+        default:
+            return "-"
+        }
     }
 }
 

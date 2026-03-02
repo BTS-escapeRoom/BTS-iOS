@@ -12,7 +12,9 @@ struct MyFeature: Reducer {
 
         var isLoading: Bool = false
         var isUpdatingDisplay: Bool = false
+        var isUpdatingProfile: Bool = false
         var errorMessage: String? = nil
+        var successMessage: String? = nil
 
         var previewHistories: [ReviewHistory] {
             let displayedHistories = histories.filter { displayedReviewIds.contains($0.reviewId) }
@@ -27,12 +29,15 @@ struct MyFeature: Reducer {
         case refresh
         case memberResponse(Result<Member, Error>)
         case historyResponse(Result<[ReviewHistory], Error>)
+        case updateProfile(nickname: String, description: String)
+        case updateProfileResponse(Result<Member, Error>)
         case toggleHistoryDisplay(reviewId: Int)
         case updateHistoryDisplayResponse(Result<String, Error>, previousDisplayedReviewIds: Set<Int>)
         case recruitBoardActivity(RecruitBoardActivityFeature.Action)
         case myReviews(MyReviewsFeature.Action)
         case logoutTapped
         case clearErrorMessage
+        case clearSuccessMessage
         case delegate(Delegate)
     }
 
@@ -103,6 +108,49 @@ struct MyFeature: Reducer {
                 state.errorMessage = error.localizedDescription
                 return .none
 
+            case let .updateProfile(nickname, description):
+                guard !state.isUpdatingProfile else { return .none }
+
+                let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !(2...10).contains(trimmedNickname.count) {
+                    state.errorMessage = "닉네임은 2~10자로 입력해주세요."
+                    return .none
+                }
+
+                state.isUpdatingProfile = true
+                state.errorMessage = nil
+                state.successMessage = nil
+
+                let profileImg = state.member?.profileImg
+                let request = MemberUpdateRequest(
+                    profileImg: profileImg,
+                    nickname: trimmedNickname,
+                    description: description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    ? nil
+                    : description.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+
+                return .run { send in
+                    do {
+                        let member = try await memberAPIClient.updateMembers(request)
+                        await send(.updateProfileResponse(.success(member)))
+                    } catch {
+                        await send(.updateProfileResponse(.failure(error)))
+                    }
+                }
+
+            case let .updateProfileResponse(.success(member)):
+                state.isUpdatingProfile = false
+                state.member = member
+                AuthSessionStore.currentMember = member
+                state.successMessage = "프로필이 저장되었어요."
+                return .none
+
+            case let .updateProfileResponse(.failure(error)):
+                state.isUpdatingProfile = false
+                state.errorMessage = error.localizedDescription
+                return .none
+
             case let .toggleHistoryDisplay(reviewId):
                 guard let history = state.histories.first(where: { $0.reviewId == reviewId }) else {
                     return .none
@@ -162,6 +210,10 @@ struct MyFeature: Reducer {
 
             case .clearErrorMessage:
                 state.errorMessage = nil
+                return .none
+
+            case .clearSuccessMessage:
+                state.successMessage = nil
                 return .none
 
             case .delegate:
