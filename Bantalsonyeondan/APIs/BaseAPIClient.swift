@@ -7,6 +7,11 @@
 
 import Foundation
 
+private struct APIErrorEnvelope: Decodable {
+    let message: String?
+    let code: String?
+}
+
 //MARK: BaseAPIClient
 protocol BaseAPIClientProtocol {
     /// 네트워크 요청을 위한 기본 URL
@@ -313,11 +318,7 @@ extension BaseAPIClientProtocol {
     }
 
     private func decodeServerMessage(from data: Data) -> String? {
-        struct ErrorEnvelope: Decodable {
-            let message: String?
-            let code: String?
-        }
-        guard let envelope = try? JSONDecoder().decode(ErrorEnvelope.self, from: data) else {
+        guard let envelope = try? JSONDecoder().decode(APIErrorEnvelope.self, from: data) else {
             return nil
         }
         return envelope.message?.trimmingCharacters(in: .whitespacesAndNewlines)
