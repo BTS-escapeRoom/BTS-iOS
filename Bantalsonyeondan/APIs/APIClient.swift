@@ -99,54 +99,24 @@ struct MemberAPIClient: APIClient {
 
     /// DELETE /v1/members 회원 탈퇴
     func deleteMember(naverAccessToken: String? = nil) async throws {
-        let url = baseURL.appendingPathComponent("members")
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.addValue("*/*", forHTTPHeaderField: "Accept")
-
-        if let bearerToken {
-            request.addValue(bearerToken, forHTTPHeaderField: "Authorization")
-        }
-
         let trimmedNaverToken = naverAccessToken?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !trimmedNaverToken.isEmpty {
-            request.addValue(trimmedNaverToken, forHTTPHeaderField: "naverAccessToken")
+        let headers: [String: String]
+        if trimmedNaverToken.isEmpty {
+            headers = [:]
+        } else {
+            headers = ["naverAccessToken": trimmedNaverToken]
         }
 
-#if DEBUG
-        print("[DEBUG] Request\n\(request.debugDescription)")
-#endif
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            let responseString = String(data: data, encoding: .utf8) ?? "No response body"
-            let description = "\n[DEBUG] Error Status code: \(httpResponse.statusCode)\nResponse: \(responseString)"
-
-            if httpResponse.statusCode == 401 {
-                throw URLError(
-                    .userAuthenticationRequired,
-                    userInfo: [NSLocalizedDescriptionKey: description]
-                )
-            }
-
-            throw URLError(
-                .badServerResponse,
-                userInfo: [NSLocalizedDescriptionKey: description]
-            )
-        }
-
-#if DEBUG
-        if let responseString = String(data: data, encoding: .utf8) {
-            print("[DEBUG] Response\nfrom members:\n\(responseString)\n")
-        }
-#endif
+        let _: EmptyResponseObject = try await request(
+            "members",
+            method: "DELETE",
+            headers: headers
+        )
     }
 }
+
+private struct EmptyResponseObject: Decodable {}
 
 //MARK: 댓글 API
 struct CommentAPIClient: APIClient {

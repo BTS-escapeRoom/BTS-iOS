@@ -9,6 +9,9 @@ import Foundation
 
 struct APIConfig {
     static let baseURL = URL(string: "https://apis.bangtal-boys.com/v1/")!
+    static let reissueURL = baseURL
+        .deletingLastPathComponent()
+        .appendingPathComponent("reissue")
     static let debugFallbackBearerToken = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzLXRva2VuIiwiaWQiOjEsInVzZXJuYW1lIjoi6rSA66as7J6QIiwicm9sZSI6IlJPTEVfQURNSU4iLCJpYXQiOjE3MzYyMjgzMDUsImV4cCI6ODA2MzAyMjgzMDV9.SkiUghz1aukqU2UNpUEON-N5mrQs73I1NuaoifjL0DI"
 
     static var bearerToken: String? {
@@ -68,4 +71,26 @@ enum AuthSessionStore {
 
 extension Notification.Name {
     static let authSessionExpired = Notification.Name("authSessionExpired")
+}
+
+actor AuthRefreshCoordinator {
+    static let shared = AuthRefreshCoordinator()
+
+    private var runningTask: Task<UserSession, Error>?
+
+    func refreshSessionIfNeeded(
+        _ refreshWork: @escaping @Sendable () async throws -> UserSession
+    ) async throws -> UserSession {
+        if let runningTask {
+            return try await runningTask.value
+        }
+
+        let task = Task {
+            try await refreshWork()
+        }
+        runningTask = task
+        defer { runningTask = nil }
+
+        return try await task.value
+    }
 }

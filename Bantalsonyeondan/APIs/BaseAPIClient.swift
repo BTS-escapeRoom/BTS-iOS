@@ -23,7 +23,8 @@ protocol BaseAPIClientProtocol {
         _ path: String,
         method: String,
         query: Encodable?,
-        body: Encodable?
+        body: Encodable?,
+        headers: [String: String]
     ) async throws -> T
 }
 
@@ -42,7 +43,8 @@ extension BaseAPIClientProtocol {
         _ path: String,
         method: String = "GET",
         query: Encodable? = nil,
-        body: Encodable? = nil
+        body: Encodable? = nil,
+        headers: [String: String] = [:]
     ) async throws -> T {
         
         // 1) URLComponents 구성
@@ -82,23 +84,30 @@ extension BaseAPIClientProtocol {
             request.httpBody = try JSONEncoder().encode(body)
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
+
+        for (key, value) in headers {
+            let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedValue.isEmpty else { continue }
+            request.setValue(trimmedValue, forHTTPHeaderField: key)
+        }
 #if DEBUG
         print("[DEBUG] Request\n\(request.debugDescription)")
 #endif
         // 5) URLSession 요청
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
+        let (data, httpResponse) = try await executeRequestWithAuthRetry(
+            request,
+            shouldRetryOnUnauthorized: true
+        )
         
         guard httpResponse.statusCode == 200 else {
             let responseString = String(data: data, encoding: .utf8) ?? "No response body"
+            let displayMessage = apiErrorMessage(statusCode: httpResponse.statusCode, data: data)
             let description = "\n[DEBUG] Error Status code: \(httpResponse.statusCode)\nResponse: \(responseString)"
 
             if httpResponse.statusCode == 401 {
                 let unauthorizedError = URLError(
                     .userAuthenticationRequired,
-                    userInfo: [NSLocalizedDescriptionKey: description]
+                    userInfo: [NSLocalizedDescriptionKey: displayMessage]
                 )
 #if DEBUG
                 print("[DEBUG] Response\nfrom \(path):\n\(description)\n")
@@ -106,7 +115,7 @@ extension BaseAPIClientProtocol {
                 throw unauthorizedError
             }
 
-            let error = URLError(.badServerResponse, userInfo: [NSLocalizedDescriptionKey: description])
+            let error = URLError(.badServerResponse, userInfo: [NSLocalizedDescriptionKey: displayMessage])
 #if DEBUG
             print("[DEBUG] Response\nfrom \(path):\n\(description)\n")
 #endif
@@ -120,6 +129,198 @@ extension BaseAPIClientProtocol {
 #endif
         // 6) JSON 디코딩
         return try JSONDecoder().decode(BaseResponse<T>.self, from: data).data
+    }
+
+    private func executeRequestWithAuthRetry(
+        _ request: URLRequest,
+        shouldRetryOnUnauthorized: Bool
+    ) async throws -> (Data, HTTPURLResponse) {
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        guard httpResponse.statusCode == 401,
+              shouldRetryOnUnauthorized,
+              request.value(forHTTPHeaderField: "Authorization") != nil else {
+            return (data, httpResponse)
+        }
+
+        guard await refreshAccessTokenIfPossible() else {
+            return (data, httpResponse)
+        }
+
+        var retryRequest = request
+        if let bearerToken {
+            retryRequest.setValue(bearerToken, forHTTPHeaderField: "Authorization")
+        } else {
+            retryRequest.setValue(nil, forHTTPHeaderField: "Authorization")
+        }
+
+#if DEBUG
+        print("[DEBUG] Retry Request\n\(retryRequest.debugDescription)")
+#endif
+        return try await executeRequestWithAuthRetry(
+            retryRequest,
+            shouldRetryOnUnauthorized: false
+        )
+    }
+
+    private func refreshAccessTokenIfPossible() async -> Bool {
+        guard let session = AuthSessionStore.currentSession else {
+            return false
+        }
+
+        let refreshToken = session.refreshToken?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !refreshToken.isEmpty else {
+            expireSession()
+            return false
+        }
+
+        do {
+            let refreshedSession = try await AuthRefreshCoordinator.shared.refreshSessionIfNeeded {
+                try await reissueSession(currentSession: session, refreshToken: refreshToken)
+            }
+            AuthSessionStore.currentSession = refreshedSession
+            return true
+        } catch {
+#if DEBUG
+            print("[DEBUG] Refresh failed: \(error.localizedDescription)")
+#endif
+            expireSession()
+            return false
+        }
+    }
+
+    private func reissueSession(
+        currentSession: UserSession,
+        refreshToken: String
+    ) async throws -> UserSession {
+        var request = URLRequest(url: APIConfig.reissueURL)
+        request.httpMethod = "POST"
+        request.setValue("*/*", forHTTPHeaderField: "Accept")
+        request.setValue("refresh-token=\(refreshToken)", forHTTPHeaderField: "Cookie")
+
+#if DEBUG
+        print("[DEBUG] Refresh Request\n\(request.debugDescription)")
+#endif
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let responseString = String(data: data, encoding: .utf8) ?? "No response body"
+            throw URLError(
+                .userAuthenticationRequired,
+                userInfo: [NSLocalizedDescriptionKey: responseString]
+            )
+        }
+
+        let decodedAuthResponse = try? JSONDecoder()
+            .decode(BaseResponse<AuthResponse>.self, from: data)
+            .data
+
+        let headerAccessToken = httpResponse
+            .headerValue(for: "access-token")?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let bodyAccessToken = decodedAuthResponse?.accessToken
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let accessToken = sanitizeToken(bodyAccessToken ?? headerAccessToken ?? "")
+
+        guard !accessToken.isEmpty else {
+            throw URLError(
+                .cannotParseResponse,
+                userInfo: [NSLocalizedDescriptionKey: "Missing access token from reissue response."]
+            )
+        }
+
+        let bodyRefreshToken = decodedAuthResponse?.refreshToken?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let cookieRefreshToken = extractRefreshTokenCookie(
+            from: httpResponse,
+            requestURL: request.url
+        )
+        let nextRefreshToken = bodyRefreshToken
+            ?? cookieRefreshToken
+            ?? refreshToken
+
+        return UserSession(
+            accessToken: accessToken,
+            refreshToken: nextRefreshToken,
+            memberId: decodedAuthResponse?.memberId ?? currentSession.memberId,
+            role: decodedAuthResponse?.role ?? currentSession.role,
+            isNewUser: decodedAuthResponse?.isNewUser ?? currentSession.isNewUser
+        )
+    }
+
+    private func extractRefreshTokenCookie(
+        from response: HTTPURLResponse,
+        requestURL: URL?
+    ) -> String? {
+        guard let requestURL else { return nil }
+
+        var headerFields: [String: String] = [:]
+        for (key, value) in response.allHeaderFields {
+            guard let key = key as? String else { continue }
+            headerFields[key] = String(describing: value)
+        }
+
+        let cookies = HTTPCookie.cookies(
+            withResponseHeaderFields: headerFields,
+            for: requestURL
+        )
+
+        return cookies
+            .first(where: { $0.name.caseInsensitiveCompare("refresh-token") == .orderedSame })?
+            .value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func sanitizeToken(_ token: String) -> String {
+        token
+            .replacingOccurrences(of: "Bearer ", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func expireSession() {
+        AuthSessionStore.clearAll()
+        Task { @MainActor in
+            NotificationCenter.default.post(name: .authSessionExpired, object: nil)
+        }
+    }
+
+    private func apiErrorMessage(statusCode: Int, data: Data) -> String {
+        if let serverMessage = decodeServerMessage(from: data), !serverMessage.isEmpty {
+            return serverMessage
+        }
+        switch statusCode {
+        case 400:
+            return "요청값이 올바르지 않아요."
+        case 401:
+            return "로그인이 만료되었어요. 다시 로그인해주세요."
+        case 403:
+            return "접근 권한이 없어요."
+        case 404:
+            return "요청한 정보를 찾을 수 없어요."
+        case 500...599:
+            return "서버 오류가 발생했어요. 잠시 후 다시 시도해주세요."
+        default:
+            return "요청 처리 중 오류가 발생했어요. 잠시 후 다시 시도해주세요."
+        }
+    }
+
+    private func decodeServerMessage(from data: Data) -> String? {
+        struct ErrorEnvelope: Decodable {
+            let message: String?
+            let code: String?
+        }
+        guard let envelope = try? JSONDecoder().decode(ErrorEnvelope.self, from: data) else {
+            return nil
+        }
+        return envelope.message?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
@@ -146,5 +347,17 @@ extension Encodable {
             return [:]
         }
         return dict
+    }
+}
+
+extension HTTPURLResponse {
+    func headerValue(for name: String) -> String? {
+        for (key, value) in allHeaderFields {
+            guard let keyString = key as? String else { continue }
+            if keyString.caseInsensitiveCompare(name) == .orderedSame {
+                return String(describing: value)
+            }
+        }
+        return nil
     }
 }

@@ -59,7 +59,7 @@ struct AuthResponse: Decodable, Equatable {
     }
 }
 
-struct UserSession: Codable, Equatable {
+struct UserSession: Codable, Equatable, Sendable {
     let accessToken: String
     let refreshToken: String?
     let memberId: Int?
