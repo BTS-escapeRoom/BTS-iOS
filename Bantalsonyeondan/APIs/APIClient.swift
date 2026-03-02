@@ -228,7 +228,7 @@ struct UserAPIClient: APIClient {
     /// 카카오톡 로그인
     func loginWithKakaoTalkAsync() async throws -> AuthResponse {
         let accessToken = try await UserApi.shared.loginWithKakaoTalkAsync()
-        let userId = try await fetchCurrentKakaoUserId()
+        let userId = try await fetchCurrentKakaoUserId(accessToken: accessToken)
         return try await login(
             provider: "kakao",
             body: AppSocialLoginRequest(
@@ -244,7 +244,7 @@ struct UserAPIClient: APIClient {
     /// 카카오 계정 로그인
     func loginWithKakaoAccountAsync() async throws -> AuthResponse {
         let accessToken = try await UserApi.shared.loginWithKakaoAccountAsync()
-        let userId = try await fetchCurrentKakaoUserId()
+        let userId = try await fetchCurrentKakaoUserId(accessToken: accessToken)
         return try await login(
             provider: "kakao",
             body: AppSocialLoginRequest(
@@ -299,29 +299,32 @@ struct UserAPIClient: APIClient {
         try await request("auth/login/\(provider)", method: "POST", body: body)
     }
 
-    private func fetchCurrentKakaoUserId() async throws -> Int64 {
-        let user = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<User, Error>) in
-            UserApi.shared.me { user, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                } else if let user = user {
-                    continuation.resume(returning: user)
-                } else {
-                    continuation.resume(throwing: NSError(
-                        domain: "KakaoMe",
-                        code: -1,
-                        userInfo: [NSLocalizedDescriptionKey: "No user info"]
-                    ))
-                }
-            }
+    private func fetchCurrentKakaoUserId(accessToken: String) async throws -> Int64 {
+        guard let url = URL(string: "https://kapi.kakao.com/v2/user/me") else {
+            throw URLError(.badURL)
         }
-        guard let userId = user.id else {
-            throw NSError(
-                domain: "KakaoMe",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "No user id"]
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        guard 200..<300 ~= httpResponse.statusCode else {
+            let responseText = String(data: data, encoding: .utf8) ?? "No response body"
+            throw URLError(
+                .badServerResponse,
+                userInfo: [NSLocalizedDescriptionKey: "Kakao user info failed: \(httpResponse.statusCode), \(responseText)"]
             )
         }
-        return userId
+
+        let me = try JSONDecoder().decode(KakaoUserIDResponse.self, from: data)
+        return me.id
     }
+}
+
+private struct KakaoUserIDResponse: Decodable {
+    let id: Int64
 }
