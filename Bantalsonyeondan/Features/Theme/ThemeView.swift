@@ -10,6 +10,18 @@ import ComposableArchitecture
 
 struct ThemeView: View {
     let store: StoreOf<ThemeFeature>
+    let isAuthenticated: Bool
+    let onRequireLogin: () -> Void
+
+    init(
+        store: StoreOf<ThemeFeature>,
+        isAuthenticated: Bool = true,
+        onRequireLogin: @escaping () -> Void = {}
+    ) {
+        self.store = store
+        self.isAuthenticated = isAuthenticated
+        self.onRequireLogin = onRequireLogin
+    }
 
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
@@ -70,9 +82,14 @@ struct ThemeView: View {
                 send: .dismissDetail)
             ) { theme in
                 if #available(iOS 16.4, *) {
-                    ThemeDetailView(themeInfo: theme, onDismiss: {
-                        viewStore.send(.dismissDetail)
-                    })
+                    ThemeDetailView(
+                        themeInfo: theme,
+                        isAuthenticated: isAuthenticated,
+                        onRequireLogin: onRequireLogin,
+                        onDismiss: {
+                            viewStore.send(.dismissDetail)
+                        }
+                    )
                     .presentationDetents([.fraction(0.92)])
                     .presentationDragIndicator(.visible)
                     .presentationBackground(.thickMaterial)

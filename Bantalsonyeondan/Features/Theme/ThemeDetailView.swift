@@ -10,7 +10,21 @@ import ComposableArchitecture
 
 struct ThemeDetailView: View {
     let themeInfo: ThemeDetail
+    let isAuthenticated: Bool
+    let onRequireLogin: () -> Void
     let onDismiss: () -> Void
+
+    init(
+        themeInfo: ThemeDetail,
+        isAuthenticated: Bool = true,
+        onRequireLogin: @escaping () -> Void = {},
+        onDismiss: @escaping () -> Void
+    ) {
+        self.themeInfo = themeInfo
+        self.isAuthenticated = isAuthenticated
+        self.onRequireLogin = onRequireLogin
+        self.onDismiss = onDismiss
+    }
 
     enum Tab: String, CaseIterable, Identifiable {
         case detail = "상세정보"
@@ -26,6 +40,10 @@ struct ThemeDetailView: View {
             HStack {
                 ForEach(Tab.allCases) { tab in
                     Button(action: {
+                        if tab == .review, !isAuthenticated {
+                            onRequireLogin()
+                            return
+                        }
                         selectedTab = tab
                     }) {
                         VStack(spacing: 4) {
