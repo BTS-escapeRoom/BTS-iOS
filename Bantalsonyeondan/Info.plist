@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>UIAppFonts</key>
-	<array>
-		<string>Galmuri9.ttf</string>
-	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -21,14 +17,14 @@
 			<string>yi-sang.Bantalsonyeondan.naver</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>naver_bangtalsonyeondan</string>
+				<string>naverbangtalsonyeondan</string>
 			</array>
 		</dict>
 	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>kakaokompassauth</string>
-		<string>naver_bangtalsonyeondan</string>
+		<string>naverbangtalsonyeondan</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
@@ -37,7 +33,13 @@
 	</dict>
 	<key>NaverClientID</key>
 	<string>87XRcRkTrKm_jRmKqsVb</string>
+	<key>NaverClientSecret</key>
+	<string>XRsjyrij5R</string>
 	<key>NaverRedirectURI</key>
-	<string>https://apis.bangtal-boys.com/login/oauth2/code/naver</string>
+	<string>naverbangtalsonyeondan://auth</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Galmuri9.ttf</string>
+	</array>
 </dict>
 </plist>

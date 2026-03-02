@@ -21,7 +21,6 @@ final class AppleSignInManager: NSObject {
     private var expectedState: String?
 
     func signInWithAppleAsync(state: String, nonce: String) async throws -> AppleSignInResult {
-        // 이전 요청이 남아있다면 에러 처리
         if continuation != nil {
             throw NSError(
                 domain: "AppleSignIn",
@@ -75,11 +74,7 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
         }
 
         let state = credential.state ?? ""
-
-        let result = AppleSignInResult(
-            authorizationCode: code,
-            state: state
-        )
+        let result = AppleSignInResult(authorizationCode: code, state: state)
 
         continuation?.resume(returning: result)
         continuation = nil
@@ -95,8 +90,7 @@ extension AppleSignInManager: ASAuthorizationControllerDelegate {
 
 extension AppleSignInManager: ASAuthorizationControllerPresentationContextProviding {
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        // 가장 위에 있는 UIWindow 반환
-        return UIApplication.shared.windows.first { $0.isKeyWindow } ?? ASPresentationAnchor()
+        UIApplication.shared.windows.first { $0.isKeyWindow } ?? ASPresentationAnchor()
     }
 }
 
@@ -122,7 +116,6 @@ private struct NaverSignInConfiguration {
         guard !redirectURI.isEmpty else {
             throw NaverSignInError.configurationMissing("Info.plist의 NaverRedirectURI를 설정해주세요.")
         }
-        // URL(string:)은 "_"가 포함된 커스텀 스킴을 nil로 처리할 수 있어 문자열로 직접 파싱한다.
         guard let schemeSeparatorRange = redirectURI.range(of: "://") else {
             throw NaverSignInError.configurationMissing("NaverRedirectURI는 URL 스킴이 포함된 값이어야 합니다.")
         }
