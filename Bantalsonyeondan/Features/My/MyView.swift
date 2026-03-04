@@ -113,15 +113,43 @@ struct MyView: View {
                         }
                     )
                 }
-                .confirmationDialog(
-                    "로그아웃 하시겠어요?",
-                    isPresented: $isShowingLogoutDialog,
-                    titleVisibility: .visible
-                ) {
-                    Button("로그아웃", role: .destructive) {
-                        viewStore.send(.logoutTapped)
+                .sheet(isPresented: $isShowingLogoutDialog) {
+                    VStack(spacing: 12) {
+                        Text("로그아웃 하시겠어요?")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(Color("cod_gray"))
+                            .padding(.top, 8)
+
+                        VStack(spacing: 0) {
+                            Button {
+                                isShowingLogoutDialog = false
+                                DispatchQueue.main.async {
+                                    viewStore.send(.logoutTapped)
+                                }
+                            } label: {
+                                Text("로그아웃")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(Color.red)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 56)
+                            }
+                            Divider()
+                            Button {
+                                isShowingLogoutDialog = false
+                            } label: {
+                                Text("취소")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(Color("cod_gray"))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 56)
+                            }
+                        }
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
-                    Button("취소", role: .cancel) {}
+                    .padding(16)
+                    .presentationDetents([.height(220)])
+                    .presentationDragIndicator(.hidden)
                 }
                 .overlay {
                     if viewStore.isLoading {
@@ -394,8 +422,7 @@ struct MyReviewsView: View {
             .onAppear {
                 viewStore.send(.onAppear)
             }
-            .confirmationDialog(
-                "",
+            .sheet(
                 isPresented: Binding(
                     get: { selectedReviewIdForMore != nil },
                     set: { isPresented in
@@ -403,18 +430,57 @@ struct MyReviewsView: View {
                             selectedReviewIdForMore = nil
                         }
                     }
-                ),
-                titleVisibility: .hidden
+                )
             ) {
-                if let reviewId = selectedReviewIdForMore {
-                    Button("수정") {
-                        viewStore.send(.requestEdit(reviewId: reviewId))
+                VStack(spacing: 8) {
+                    VStack(spacing: 0) {
+                        if let reviewId = selectedReviewIdForMore {
+                            Button {
+                                selectedReviewIdForMore = nil
+                                DispatchQueue.main.async {
+                                    viewStore.send(.requestEdit(reviewId: reviewId))
+                                }
+                            } label: {
+                                Text("수정")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(Color("cod_gray"))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 56)
+                            }
+                            Divider()
+                            Button {
+                                selectedReviewIdForMore = nil
+                                DispatchQueue.main.async {
+                                    viewStore.send(.requestDelete(reviewId: reviewId))
+                                }
+                            } label: {
+                                Text("삭제")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(Color.red)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 56)
+                            }
+                        }
                     }
-                    Button("삭제", role: .destructive) {
-                        viewStore.send(.requestDelete(reviewId: reviewId))
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                    Button {
+                        selectedReviewIdForMore = nil
+                    } label: {
+                        Text("닫기")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundStyle(Color("cod_gray"))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
+                    .buttonStyle(.plain)
                 }
-                Button("닫기", role: .cancel) {}
+                .padding(16)
+                .presentationDetents([.height(220)])
+                .presentationDragIndicator(.hidden)
             }
             .sheet(
                 item: viewStore.binding(
@@ -804,17 +870,49 @@ private struct ServiceSettingsView: View {
         }
         .navigationTitle("서비스 설정")
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog(
-            "정말 탈퇴하시겠어요?",
-            isPresented: $isShowingWithdrawConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("탈퇴하기", role: .destructive) {
-                onWithdraw(nil)
+        .sheet(isPresented: $isShowingWithdrawConfirm) {
+            VStack(spacing: 12) {
+                Text("정말 탈퇴하시겠어요?")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color("cod_gray"))
+                    .padding(.top, 8)
+
+                Text("탈퇴 시 계정 정보와 내 활동 정보가 삭제될 수 있어요.")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(Color(UIColor.systemGray))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+
+                VStack(spacing: 0) {
+                    Button {
+                        isShowingWithdrawConfirm = false
+                        DispatchQueue.main.async {
+                            onWithdraw(nil)
+                        }
+                    } label: {
+                        Text("탈퇴하기")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundStyle(Color.red)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                    }
+                    Divider()
+                    Button {
+                        isShowingWithdrawConfirm = false
+                    } label: {
+                        Text("취소")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundStyle(Color("cod_gray"))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                    }
+                }
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
             }
-            Button("취소", role: .cancel) {}
-        } message: {
-            Text("탈퇴 시 계정 정보와 내 활동 정보가 삭제될 수 있어요.")
+            .padding(16)
+            .presentationDetents([.height(250)])
+            .presentationDragIndicator(.hidden)
         }
         .overlay {
             if isDeletingAccount {
