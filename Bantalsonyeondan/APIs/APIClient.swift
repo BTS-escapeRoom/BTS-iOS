@@ -225,16 +225,31 @@ struct BoardAPIClient: APIClient {
         try await request("boards/like")
     }
     
-    /// POST /v1/boards/like
+    /// POST /v1/boards/{boardId}/like
     func toggleLikedBoards(_ boardId: String) async throws -> String {
-        try await request("boards/like",
-                          method: "POST",
-                          query: ["boardId":boardId])
+        try await request("boards/\(boardId)/like", method: "POST")
     }
     
     /// GET /v1/boards/{boardId}
     func getBoard(_ boardId: String) async throws -> BoardDetail {
         try await request("boards/\(boardId)")
+    }
+
+    /// PATCH /v1/boards/{boardId}
+    func updateBoard(_ boardId: String, _ requestBody: BoardUpdateRequest) async throws -> BoardDetail {
+        try await request(
+            "boards/\(boardId)",
+            method: "PATCH",
+            body: requestBody
+        )
+    }
+
+    /// PATCH /v1/boards/{boardId}/close-recruit
+    func closeRecruit(_ boardId: String) async throws -> String {
+        try await request(
+            "boards/\(boardId)/close-recruit",
+            method: "PATCH"
+        )
     }
     
     /// DELETE /v1/boards/{boardId}

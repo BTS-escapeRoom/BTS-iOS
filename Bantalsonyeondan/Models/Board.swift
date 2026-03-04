@@ -27,6 +27,7 @@ struct Board: Decodable, Equatable, Identifiable {
     let createdAt : String?
     let updatedAt : String?
     let isPopular : Bool
+    let isLike: Bool?
 }
 
 struct BoardSimple: Decodable, Equatable {
@@ -55,6 +56,7 @@ struct BoardDetail: Decodable, Equatable {
     let likeCount: Int
     let commentCount: Int
     let theme: ThemeDetail
+    let isLike: Bool?
 }
 
 struct BoardCreateRequest: Encodable {
@@ -65,6 +67,16 @@ struct BoardCreateRequest: Encodable {
     let recruit_deadline: String
     let escape_date: String
     let recruit_people: String
+    let contact_url: String
+    let contact_method: String
+}
+
+struct BoardUpdateRequest: Encodable {
+    let title: String
+    let description: String
+    let recruit_deadline: String
+    let escape_date: String
+    let recruit_people: Int
     let contact_url: String
     let contact_method: String
 }

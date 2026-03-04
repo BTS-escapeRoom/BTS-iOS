@@ -30,6 +30,10 @@ struct CommunityWriteView: View {
         }
     }
 
+    private let editingBoardId: Int?
+    private let onCompleted: (() -> Void)?
+    private let shouldAllowThemeSelection: Bool
+
     @State private var title: String = ""
     @State private var recruitCount: String = ""
     @State private var escapeDate: Date? = nil
@@ -45,6 +49,43 @@ struct CommunityWriteView: View {
     @Environment(\.dismiss) private var dismiss
     let boardApiClient = BoardAPIClient()
 
+    init(
+        editingBoard: BoardDetail? = nil,
+        fallbackBoard: Board? = nil,
+        onCompleted: (() -> Void)? = nil
+    ) {
+        self.editingBoardId = editingBoard?.id
+        self.onCompleted = onCompleted
+        self.shouldAllowThemeSelection = editingBoard == nil
+
+        let resolvedTitle = editingBoard?.title ?? fallbackBoard?.title ?? ""
+        let resolvedRecruitCount: String = {
+            if let count = editingBoard?.recruit_people {
+                return String(count)
+            }
+            if let count = fallbackBoard?.recruitPeople {
+                return String(count)
+            }
+            return ""
+        }()
+        let resolvedEscapeDateString = editingBoard?.escape_date ?? fallbackBoard?.escapeDate
+        let resolvedDeadlineString = editingBoard?.recruit_deadline ?? fallbackBoard?.recruitDeadline
+        let resolvedContactMethodRaw = editingBoard?.contact_method ?? fallbackBoard?.contactMethod
+        let resolvedContactUrl = editingBoard?.contact_url ?? fallbackBoard?.contactUrl ?? ""
+        let resolvedContent = editingBoard?.description ?? ""
+        let resolvedTheme = CommunityWriteView.convertTheme(from: editingBoard?.theme)
+
+        _title = State(initialValue: resolvedTitle)
+        _recruitCount = State(initialValue: resolvedRecruitCount)
+        _escapeDate = State(initialValue: CommunityWriteView.parseISODate(resolvedEscapeDateString))
+        _isDateUndecided = State(initialValue: resolvedEscapeDateString == nil)
+        _contactMethodType = State(initialValue: CommunityWriteView.resolveContactMethod(from: resolvedContactMethodRaw))
+        _contactUrl = State(initialValue: resolvedContactUrl)
+        _deadline = State(initialValue: CommunityWriteView.parseISODate(resolvedDeadlineString))
+        _content = State(initialValue: resolvedContent)
+        _selectedTheme = State(initialValue: resolvedTheme)
+    }
+
     var body: some View {
         NavigationView {
             ScrollView {
@@ -59,7 +100,7 @@ struct CommunityWriteView: View {
                     // Recruit Count
                     HStack {
                         Text("모집 인원")
-                            .padding()
+                            .padding(.trailing, 8)
                         TextField("0", text: $recruitCount)
                             .keyboardType(.numberPad)
                             .frame(width: 50)
@@ -69,7 +110,7 @@ struct CommunityWriteView: View {
                     }
 
                     // Escape Date
-                    HStack {
+                    HStack(alignment: .top) {
                         Text("탈출 일자")
                         VStack(alignment: .leading) {
                             DatePicker("", selection: Binding($escapeDate, replacingNilWith: Date()), displayedComponents: .date)
@@ -109,17 +150,33 @@ struct CommunityWriteView: View {
                     // Theme Info
                     VStack(alignment: .leading, spacing: 8) {
                         Text("테마 정보")
+                            .font(.system(size: 18, weight: .semibold))
+
+                        if shouldAllowThemeSelection {
+                            Button(action: { showThemeSelectView = true }) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color(.systemGray6))
+                                        .frame(height: 52)
+
+                                    Text(selectedTheme == nil ? "테마 연결하기" : "다른 테마 선택")
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundColor(Color(.systemGray))
+                                        .underline(selectedTheme == nil)
+
+                                    HStack {
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(Color(.systemGray3))
+                                            .padding(.trailing, 14)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         if let theme = selectedTheme {
                             ThemeInfoCard(theme: theme)
-                        }
-                        Button(action: { showThemeSelectView = true }) {
-                            HStack {
-                                Text(selectedTheme == nil ? "테마 연결하기" : "다른 테마 선택")
-                                    .foregroundColor(.blue)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.gray)
-                            }
                         }
                     }
 
@@ -157,34 +214,48 @@ struct CommunityWriteView: View {
                         let isoFormatter = ISO8601DateFormatter()
                         let recruitDeadlineString = deadline != nil ? isoFormatter.string(from: deadline!) : nil
                         let escapeDateString = (escapeDate != nil && !isDateUndecided) ? isoFormatter.string(from: escapeDate!) : nil
-                        // 인원 변환
-                        let recruitPeople = recruitCount
-                        // themeId 변환
-                        let themeId = selectedTheme?.id
                         // contact_url/contact_method 분리
                         let contactMethodValue = contactMethodType.rawValue
                         // BoardCreateRequest 생성
-                        let request = BoardCreateRequest(
-                            themeId: themeId,
-                            type: "recruit",
-                            title: title,
-                            description: content,
-                            recruit_deadline: recruitDeadlineString ?? isoFormatter.string(from: Date()),
-                            escape_date: escapeDateString ?? isoFormatter.string(from: Date()),
-                            recruit_people: recruitPeople,
-                            contact_url: contactUrl,
-                            contact_method: contactMethodValue
-                        )
                         Task {
                             do {
-                                _ = try await boardApiClient.createBoards(request)
+                                if let editingBoardId {
+                                    guard let recruitPeople = Int(recruitCount) else {
+                                        toastMessage = "모집 인원을 숫자로 입력해주세요."
+                                        return
+                                    }
+                                    let request = BoardUpdateRequest(
+                                        title: title,
+                                        description: content,
+                                        recruit_deadline: recruitDeadlineString ?? isoFormatter.string(from: Date()),
+                                        escape_date: escapeDateString ?? isoFormatter.string(from: Date()),
+                                        recruit_people: recruitPeople,
+                                        contact_url: contactUrl,
+                                        contact_method: contactMethodValue
+                                    )
+                                    _ = try await boardApiClient.updateBoard("\(editingBoardId)", request)
+                                } else {
+                                    let request = BoardCreateRequest(
+                                        themeId: selectedTheme?.id,
+                                        type: "recruit",
+                                        title: title,
+                                        description: content,
+                                        recruit_deadline: recruitDeadlineString ?? isoFormatter.string(from: Date()),
+                                        escape_date: escapeDateString ?? isoFormatter.string(from: Date()),
+                                        recruit_people: recruitCount,
+                                        contact_url: contactUrl,
+                                        contact_method: contactMethodValue
+                                    )
+                                    _ = try await boardApiClient.createBoards(request)
+                                }
+                                onCompleted?()
                                 dismiss()
                             } catch {
                                 toastMessage = error.localizedDescription
                             }
                         }
                     }) {
-                        Text("작성 완료")
+                        Text(editingBoardId == nil ? "작성 완료" : "수정 완료")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -195,7 +266,7 @@ struct CommunityWriteView: View {
                 }
                 .padding()
             }
-            .navigationTitle("모집 글쓰기")
+            .navigationTitle(editingBoardId == nil ? "모집 글쓰기" : "모집 글 수정")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -210,6 +281,36 @@ struct CommunityWriteView: View {
                 ThemeSelectView(store: themeStore, selectedTheme: $selectedTheme)
             }
         }
+    }
+
+    private static func parseISODate(_ value: String?) -> Date? {
+        guard let value, !value.isEmpty else { return nil }
+        return ISO8601DateFormatter.iso8601WithOptionalFraction.date(from: value)
+            ?? ISO8601DateFormatter().date(from: value)
+    }
+
+    private static func resolveContactMethod(from rawValue: String?) -> ContactMethodType {
+        guard let rawValue else { return .openTalk }
+        return ContactMethodType(rawValue: rawValue.uppercased()) ?? .openTalk
+    }
+
+    private static func convertTheme(from detail: ThemeDetail?) -> Theme? {
+        guard let detail else { return nil }
+        return Theme(
+            id: detail.id,
+            thumbnail: detail.thumbnail,
+            title: detail.title,
+            minimumPeople: detail.minimumPeople,
+            maximumPeople: detail.maximumPeople,
+            difficulty: Double(detail.difficulty),
+            genre: detail.genre,
+            time: detail.time,
+            genreType: detail.genreType ?? "",
+            status: nil,
+            store: detail.store?.name ?? "",
+            city: detail.store?.location ?? "",
+            dictrict: nil
+        )
     }
 }
 

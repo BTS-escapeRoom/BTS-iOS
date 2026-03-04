@@ -84,7 +84,10 @@ struct CommunityView: View {
                                                 store: StoreOf<BoardDetailFeature>(
                                                     initialState: BoardDetailFeature.State(boardId: board.id, board: board),
                                                     reducer: { BoardDetailFeature() }
-                                                )
+                                                ),
+                                                onBoardChanged: {
+                                                    viewStore.send(.onSearchBarEntered(viewStore.searchText))
+                                                }
                                             )
                                         } label: {
                                             BoardCardView(board: board)

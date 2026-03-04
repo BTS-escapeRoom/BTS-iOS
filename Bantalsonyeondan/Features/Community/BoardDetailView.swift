@@ -3,6 +3,18 @@ import ComposableArchitecture
 
 struct BoardDetailView: View {
     let store: StoreOf<BoardDetailFeature>
+    let onBoardChanged: (() -> Void)?
+    @Environment(\.dismiss) private var dismiss
+    @State private var isShowingOwnerMenu: Bool = false
+    @State private var isShowingEditView: Bool = false
+
+    init(
+        store: StoreOf<BoardDetailFeature>,
+        onBoardChanged: (() -> Void)? = nil
+    ) {
+        self.store = store
+        self.onBoardChanged = onBoardChanged
+    }
 
     // 날짜 포맷 도우미
     private static func formattedEscapeDateStatic(_ str: String?) -> String? {
@@ -118,6 +130,18 @@ struct BoardDetailView: View {
                             .font(.caption)
                             .foregroundColor(.gray)
                         Spacer()
+                        if viewStore.isMine {
+                            Button {
+                                isShowingOwnerMenu = true
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .rotationEffect(.degrees(90))
+                                    .foregroundStyle(Color(UIColor.systemGray))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
 
                     // 모집 정보 섹션
@@ -176,11 +200,13 @@ struct BoardDetailView: View {
                     // 댓글 섹션
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Button(action: {}) {
+                            Button {
+                                viewStore.send(.tapToggleLike)
+                            } label: {
                                 HStack(spacing: 6) {
-                                    Image(systemName: "heart")
-                                        .foregroundColor(.gray)
-                                    Text("관심 \(viewStore.detail?.likeCount ?? 0)")
+                                    Image(systemName: viewStore.isLiked ? "heart.fill" : "heart")
+                                        .foregroundColor(viewStore.isLiked ? .red : .gray)
+                                    Text("관심 \(viewStore.likeCount)")
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
@@ -190,6 +216,7 @@ struct BoardDetailView: View {
                                 .overlay(Capsule().stroke(Color(.systemGray3), lineWidth: 1))
                             }
                             .buttonStyle(.plain)
+                            .disabled(viewStore.isTogglingLike)
                             Spacer()
                             Text("댓글 \(viewStore.commentsTotalCount)")
                                 .font(.subheadline).bold()
@@ -242,6 +269,109 @@ struct BoardDetailView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(.ultraThinMaterial)
+            }
+            .sheet(isPresented: $isShowingOwnerMenu) {
+                VStack(spacing: 8) {
+                    VStack(spacing: 0) {
+                        let isRecruitBoard = (viewStore.detail?.type ?? viewStore.board?.type) == "recruit"
+                        if isRecruitBoard, !viewStore.isRecruitClosed {
+                            Button {
+                                isShowingOwnerMenu = false
+                                DispatchQueue.main.async {
+                                    viewStore.send(.tapCloseRecruit)
+                                }
+                            } label: {
+                                Text("마감")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(Color("cod_gray"))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 56)
+                            }
+                            Divider()
+                        }
+                        if viewStore.detail != nil {
+                            Button {
+                                isShowingOwnerMenu = false
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                    isShowingEditView = true
+                                }
+                            } label: {
+                                Text("수정")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(Color("cod_gray"))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 56)
+                            }
+                            Divider()
+                        }
+                        Button {
+                            isShowingOwnerMenu = false
+                            DispatchQueue.main.async {
+                                viewStore.send(.tapDeleteBoard)
+                            }
+                        } label: {
+                            Text("삭제")
+                                .font(.system(size: 18, weight: .regular))
+                                .foregroundStyle(Color.red)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                        }
+                    }
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                    Button {
+                        isShowingOwnerMenu = false
+                    } label: {
+                        Text("닫기")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundStyle(Color("cod_gray"))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(16)
+                .presentationDetents([.height(280)])
+                .presentationDragIndicator(.hidden)
+            }
+            .fullScreenCover(isPresented: $isShowingEditView) {
+                CommunityWriteView(
+                    editingBoard: viewStore.detail,
+                    fallbackBoard: viewStore.board,
+                    onCompleted: {
+                        isShowingEditView = false
+                        viewStore.send(.refresh)
+                        onBoardChanged?()
+                    }
+                )
+            }
+            .overlay {
+                if viewStore.isUpdatingBoardAction {
+                    ZStack {
+                        Color.black.opacity(0.08).ignoresSafeArea()
+                        ProgressView()
+                    }
+                }
+            }
+            .appToast(
+                message: Binding(
+                    get: { viewStore.toastMessage },
+                    set: { _ in viewStore.send(.clearToastMessage) }
+                ),
+                style: .info
+            )
+            .onChange(of: viewStore.didMutateBoard) { mutated in
+                guard mutated else { return }
+                onBoardChanged?()
+                viewStore.send(.clearMutationFlag)
+            }
+            .onChange(of: viewStore.shouldDismiss) { shouldDismiss in
+                guard shouldDismiss else { return }
+                viewStore.send(.clearDismissRequest)
+                dismiss()
             }
             .navigationTitle("모집 게시판")
             .navigationBarTitleDisplayMode(.inline)
