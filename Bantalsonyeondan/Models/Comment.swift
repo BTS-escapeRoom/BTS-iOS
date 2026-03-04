@@ -14,7 +14,12 @@ struct CommentUpdateRequest: Encodable {
 struct Comment: Decodable, Equatable {
     let id: Int
     let comment: String
+    let memberId: Int?
     let memberName: String
+    let profileImg: String?
+    let createdAt: String?
+    let isDeleted: Bool?
+    let isReported: Bool?
 }
 
 struct BoardCommentsResponse: Decodable, Equatable {

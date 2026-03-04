@@ -48,12 +48,14 @@ struct RecruitBoardActivityFeature: Reducer {
         case setTab(Tab)
         case setSortOption(SortOption)
         case myBoardsResponse(Result<[Board], Error>)
+        case commentedBoardsResponse(Result<[Board], Error>)
         case likedBoardsResponse(Result<[Board], Error>)
         case initialLoadFinished
         case clearErrorMessage
     }
 
     @Dependency(\.boardAPIClient) var boardAPIClient
+    @Dependency(\.commentAPIClient) var commentAPIClient
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
         switch action {
@@ -83,7 +85,21 @@ struct RecruitBoardActivityFeature: Reducer {
                     }
                 }()
 
+                async let commentedResult: Result<[Board], Error> = {
+                    do {
+                        return .success(
+                            try await loadCommentedBoards(
+                                boardAPIClient: boardAPIClient,
+                                commentAPIClient: commentAPIClient
+                            )
+                        )
+                    } catch {
+                        return .failure(error)
+                    }
+                }()
+
                 await send(.myBoardsResponse(await myResult))
+                await send(.commentedBoardsResponse(await commentedResult))
                 await send(.likedBoardsResponse(await likedResult))
                 await send(.initialLoadFinished)
             }
@@ -102,6 +118,17 @@ struct RecruitBoardActivityFeature: Reducer {
 
         case let .myBoardsResponse(.failure(error)):
             state.myBoards = []
+            if state.errorMessage == nil {
+                state.errorMessage = error.localizedDescription
+            }
+            return .none
+
+        case let .commentedBoardsResponse(.success(boards)):
+            state.commentedBoards = boards
+            return .none
+
+        case let .commentedBoardsResponse(.failure(error)):
+            state.commentedBoards = []
             if state.errorMessage == nil {
                 state.errorMessage = error.localizedDescription
             }
@@ -126,6 +153,48 @@ struct RecruitBoardActivityFeature: Reducer {
             state.errorMessage = nil
             return .none
         }
+    }
+
+    private func loadCommentedBoards(
+        boardAPIClient: BoardAPIClient,
+        commentAPIClient: CommentAPIClient
+    ) async throws -> [Board] {
+        guard let memberId = AuthSessionStore.currentSession?.memberId else {
+            return []
+        }
+
+        // 전용 API가 없어서 모집글 전체를 순회하면서 댓글 작성 여부를 역으로 계산
+        var allBoards: [Board] = []
+        var nextPage = 1
+
+        while nextPage > 0 {
+            let response = try await boardAPIClient.getBoards(
+                BoardRequest(
+                    keyword: nil,
+                    type: "recruit",
+                    sortType: .latest,
+                    page: nextPage
+                )
+            )
+            allBoards += response.boards
+            nextPage = response.nextPage
+        }
+
+        if allBoards.isEmpty { return [] }
+
+        let candidates = allBoards.filter { $0.commentCount > 0 }
+        if candidates.isEmpty { return [] }
+
+        var boardIdsCommentedByMe = Set<Int>()
+
+        for board in candidates {
+            let comments = try await commentAPIClient.getComments(boardId: "\(board.id)")
+            if comments.comments.contains(where: { $0.memberId == memberId }) {
+                boardIdsCommentedByMe.insert(board.id)
+            }
+        }
+
+        return allBoards.filter { boardIdsCommentedByMe.contains($0.id) }
     }
 }
 
@@ -171,6 +240,9 @@ struct RecruitBoardActivityView: View {
                                             )
                                         ) {
                                             BoardDetailFeature()
+                                        },
+                                        onBoardChanged: {
+                                            viewStore.send(.reload)
                                         }
                                     )
                                 } label: {
