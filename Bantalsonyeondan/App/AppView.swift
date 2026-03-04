@@ -16,9 +16,9 @@ struct AppView: View {
         var message: String {
             switch self {
             case .community:
-                return "커뮤니티는 로그인 후 이용할 수 있어요."
+                return "이 공간은 로그인 후 열람할 수 있어요.\n지금 로그인하고 함께 둘러볼까요?"
             case .myPage:
-                return "나의 탈출은 로그인 후 이용할 수 있어요."
+                return "이 공간은 로그인 후 열람할 수 있어요.\n지금 로그인하고 함께 둘러볼까요?"
             }
         }
     }
@@ -59,8 +59,8 @@ struct AppView: View {
                                     loginRequiredContext = context
                                     pendingTabAfterLogin = .community
                                 case .myPage:
+                                    loginRequiredContext = context
                                     pendingTabAfterLogin = .myPage
-                                    isShowingLoginView = true
                                 }
                             }
                         )
@@ -82,26 +82,21 @@ struct AppView: View {
             .onReceive(NotificationCenter.default.publisher(for: .authSessionExpired)) { _ in
                 viewStore.send(.sessionExpired)
             }
-            .alert(
-                "로그인이 필요해요",
-                isPresented: Binding(
-                    get: { loginRequiredContext != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            loginRequiredContext = nil
+            .overlay {
+                if let loginRequiredContext {
+                    LoginRequiredPopup(
+                        message: loginRequiredContext.message,
+                        onClose: {
+                            self.loginRequiredContext = nil
+                            pendingTabAfterLogin = nil
+                        },
+                        onLogin: {
+                            self.loginRequiredContext = nil
+                            isShowingLoginView = true
                         }
-                    }
-                )
-            ) {
-                Button("취소", role: .cancel) {
-                    loginRequiredContext = nil
+                    )
+                    .transition(.opacity)
                 }
-                Button("로그인하러가기") {
-                    loginRequiredContext = nil
-                    isShowingLoginView = true
-                }
-            } message: {
-                Text(loginRequiredContext?.message ?? "")
             }
             .fullScreenCover(isPresented: $isShowingLoginView) {
                 NavigationStack {
@@ -214,6 +209,68 @@ struct AppView: View {
             MyView(
                 store: store.scope(state: \.myPage, action: \.myPage)
             )
+        }
+    }
+}
+
+private struct LoginRequiredPopup: View {
+    let message: String
+    let onClose: () -> Void
+    let onLogin: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+
+            VStack(spacing: 12) {
+                ZStack {
+                    Text("로그인이 필요해요")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.black)
+
+                    HStack {
+                        Spacer()
+                        Button(action: onClose) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+
+                Text(message)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(Color(.systemGray))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+
+                HStack(spacing: 10) {
+                    Button("닫기", action: onClose)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(Color(.systemGray))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color(.systemGray5))
+                        .cornerRadius(8)
+
+                    Button("로그인 하러 가기", action: onLogin)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.black)
+                        .cornerRadius(8)
+                }
+                .padding(.top, 2)
+            }
+            .padding(16)
+            .frame(maxWidth: 300)
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
+            .padding(.horizontal, 32)
         }
     }
 }
