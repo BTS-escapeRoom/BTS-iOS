@@ -848,10 +848,7 @@ private struct ServiceSettingsView: View {
 
             Section("약관") {
                 NavigationLink("서비스 이용약관") {
-                    PolicyDetailView(
-                        title: "서비스 이용약관",
-                        content: "서비스 이용약관 전문은 추후 업데이트됩니다."
-                    )
+                    TermsOfServiceView()
                 }
                 NavigationLink("개인정보 처리방침") {
                     PolicyDetailView(
@@ -1037,4 +1034,73 @@ private struct PolicyDetailView: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }
+}
+
+private struct TermsOfServiceView: View {
+    private let clauses: [TermsClause] = [
+        .init(
+            title: "제1조 (목적)",
+            body: "본 약관은 방탈소년단 서비스 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다."
+        ),
+        .init(
+            title: "제2조 (서비스 이용)",
+            body: "회원은 본 서비스에서 제공하는 테마 정보, 리뷰 작성, 커뮤니티 기능을 이용할 수 있으며, 관련 법령 및 본 약관을 준수해야 합니다."
+        ),
+        .init(
+            title: "제3조 (회원의 의무)",
+            body: "회원은 타인의 권리를 침해하거나 공공질서를 해치는 행위를 해서는 안 되며, 허위 정보 작성, 도배, 욕설 및 비방 행위를 금지합니다."
+        ),
+        .init(
+            title: "제4조 (게시물 관리)",
+            body: "서비스 운영 정책에 위반되는 게시물은 사전 통지 없이 수정, 숨김 또는 삭제될 수 있습니다."
+        ),
+        .init(
+            title: "제5조 (서비스 변경 및 중단)",
+            body: "회사는 운영상 필요에 따라 서비스의 일부 또는 전부를 변경하거나 중단할 수 있으며, 중요한 변경 시 사전 공지합니다."
+        )
+    ]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("이용 약관")
+                    .font(.system(size: 33, weight: .bold))
+                    .foregroundStyle(Color("cod_gray"))
+
+                Text("최종 업데이트: 2026.03.04")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(Color(.systemGray))
+
+                ForEach(clauses, id: \.title) { clause in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(clause.title)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color("cod_gray"))
+                        Text(clause.body)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(Color("cod_gray"))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.systemGray6).opacity(0.35))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color(.systemGray4), lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 20)
+        }
+        .navigationTitle("서비스 이용약관")
+        .navigationBarTitleDisplayMode(.inline)
+        .background(Color.white)
+    }
+}
+
+private struct TermsClause {
+    let title: String
+    let body: String
 }
