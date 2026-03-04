@@ -851,10 +851,7 @@ private struct ServiceSettingsView: View {
                     TermsOfServiceView()
                 }
                 NavigationLink("개인정보 처리방침") {
-                    PolicyDetailView(
-                        title: "개인정보 처리방침",
-                        content: "개인정보 처리방침 전문은 추후 업데이트됩니다."
-                    )
+                    PrivacyPolicyView()
                 }
             }
 
@@ -1020,19 +1017,143 @@ private struct AccountInfoView: View {
     }
 }
 
-private struct PolicyDetailView: View {
-    let title: String
-    let content: String
+private struct PrivacyPolicyView: View {
+    private let sections: [PolicySection] = [
+        .init(
+            title: "제1조(개인정보의 처리목적)",
+            body: """
+개발자는 다음 목적을 위해 개인정보를 처리합니다.
+1. 회원 식별 및 로그인(카카오, 네이버, 애플)
+2. 계정 관리(닉네임/프로필)
+3. 커뮤니티 기능 제공(게시글, 댓글, 리뷰 등록/수정/삭제 및 표시)
+4. 문의 대응 및 서비스 운영/보안
+"""
+        ),
+        .init(
+            title: "제2조(처리하는 개인정보 항목)",
+            body: """
+개발자는 다음 정보를 처리할 수 있습니다.
+
+1) 소셜 로그인 시(필수)
+- 소셜 제공자 구분(카카오/네이버/애플)
+- 소셜 계정 고유 식별값(소셜 ID)
+- 프로필 이미지(소셜 제공자가 제공하는 경우)
+
+2) 서비스 이용 시(이용자 입력/생성)
+- 닉네임
+- 게시글 내용
+- 댓글 내용
+- 리뷰 내용(평점/난이도/플레이 정보/방문일/후기 등 이용자가 입력한 정보 포함)
+
+3) 광고/분석 관련
+- AdMob, Google Analytics를 사용하지 않습니다.
+- 광고식별자(ADID/IDFA)를 수집하지 않습니다.
+"""
+        ),
+        .init(
+            title: "제3조(개인정보의 처리 및 보유기간)",
+            body: "개발자는 개인정보를 수집·이용 목적이 달성될 때까지 보유하며, 원칙적으로 회원 탈퇴 시 지체 없이 파기합니다. 다만, 관련 법령에 따라 보존 의무가 있는 경우 해당 기간 동안 보관할 수 있습니다."
+        ),
+        .init(
+            title: "제4조(개인정보의 제3자 제공)",
+            body: "개발자는 이용자의 개인정보를 원칙적으로 제3자에게 제공하지 않습니다. 단, 법령에 근거가 있거나 이용자가 사전에 동의한 경우에 한해 제공합니다."
+        ),
+        .init(
+            title: "제5조(개인정보처리의 위탁)",
+            body: "개발자는 현재 개인정보 처리 업무를 외부에 위탁하지 않습니다. 향후 위탁이 발생하는 경우 본 방침을 통해 고지합니다."
+        ),
+        .init(
+            title: "제6조(정보주체의 권리·의무 및 행사방법)",
+            body: "이용자는 언제든지 개인정보 열람, 정정, 삭제, 처리정지, 동의철회를 요청할 수 있습니다. 요청은 제10조의 연락처를 통해 접수할 수 있으며, 개발자는 관련 법령에 따라 처리합니다."
+        ),
+        .init(
+            title: "제7조(개인정보의 파기)",
+            body: "개발자는 개인정보 보유기간 경과 또는 처리목적 달성 시 해당 정보를 지체 없이 파기합니다. 전자적 파일은 복구 불가능한 방식으로 삭제하며, 출력물은 분쇄 또는 소각합니다."
+        ),
+        .init(
+            title: "제8조(개인정보의 안전성 확보조치)",
+            body: """
+개발자는 개인정보 보호를 위해 다음과 같은 조치를 시행합니다.
+1. 관리적 조치: 접근권한 최소화, 내부 관리
+2. 기술적 조치: 접근통제, 전송 구간 보호, 인증정보 보호
+3. 물리적 조치: 개인정보 보관 매체 및 접근 통제
+"""
+        ),
+        .init(
+            title: "제9조(소셜 로그인 제공자 관련 안내)",
+            body: """
+소셜 로그인 과정에서 각 제공자 정책에 따라 정보가 처리될 수 있습니다.
+- 카카오: https://www.kakao.com/policy/privacy
+- 네이버: https://policy.naver.com/policy/privacy.html
+- 애플: https://www.apple.com/legal/privacy/ko/
+"""
+        ),
+        .init(
+            title: "제10조(개인정보 보호책임자 및 문의처)",
+            body: """
+개인정보 보호 관련 문의는 아래로 연락 바랍니다.
+- 담당자: yi-sang (SANGHYEON LEE)
+- 이메일: sanghyle@icloud.com
+"""
+        ),
+        .init(
+            title: "제11조(개인정보 처리방침의 변경)",
+            body: "본 방침의 내용 추가·삭제·수정이 있는 경우 앱 내 공지 또는 업데이트 노트를 통해 고지합니다. 중요한 변경 사항은 시행 전에 안내합니다."
+        )
+    ]
 
     var body: some View {
         ScrollView {
-            Text(content)
-                .font(.system(size: 16))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16)
+            VStack(alignment: .leading, spacing: 14) {
+                Text("“방탈소년단” 개인정보 처리방침")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color("cod_gray"))
+
+                Text("bangtal-boys (www.bangtal-boys.com, 이하 “개발자”)는 이용자의 개인정보를 중요하게 생각하며, 관련 법령을 준수합니다.\n본 개인정보처리방침은 방탈소년단 앱 이용 시 적용됩니다.")
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundStyle(Color("cod_gray"))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("시행일자: 2026년 3월 4일")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(Color(.systemGray))
+                Text("최종 업데이트: 2026년 3월 4일")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(Color(.systemGray))
+
+                ForEach(sections, id: \.title) { section in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(section.title)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color("cod_gray"))
+                        Text(section.body)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(Color("cod_gray"))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.systemGray6).opacity(0.35))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color(.systemGray4), lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+
+                Text("공고일자: 2026년 3월 4일")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(Color(.systemGray))
+                Text("시행일자: 2026년 3월 4일")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(Color(.systemGray))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 20)
         }
-        .navigationTitle(title)
+        .navigationTitle("개인정보 처리방침")
         .navigationBarTitleDisplayMode(.inline)
+        .background(Color.white)
     }
 }
 
@@ -1101,6 +1222,11 @@ private struct TermsOfServiceView: View {
 }
 
 private struct TermsClause {
+    let title: String
+    let body: String
+}
+
+private struct PolicySection {
     let title: String
     let body: String
 }
