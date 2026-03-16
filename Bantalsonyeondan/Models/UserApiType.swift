@@ -24,7 +24,7 @@ struct AppleLoginRequest: Encodable {
 }
 
 struct AppSocialLoginRequest: Encodable {
-    let code: String
+    let code: String?
     let accessToken: String?
     let id: Int64?
     let state: String?
@@ -37,6 +37,20 @@ struct AuthResponse: Decodable, Equatable {
     let memberId: Int?
     let role: String?
     let isNewUser: Bool
+
+    init(
+        accessToken: String,
+        refreshToken: String? = nil,
+        memberId: Int? = nil,
+        role: String? = nil,
+        isNewUser: Bool = false
+    ) {
+        self.accessToken = accessToken
+        self.refreshToken = refreshToken
+        self.memberId = memberId
+        self.role = role
+        self.isNewUser = isNewUser
+    }
 
     private enum CodingKeys: String, CodingKey {
         case accessToken

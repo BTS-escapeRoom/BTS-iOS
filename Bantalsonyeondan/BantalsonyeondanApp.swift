@@ -10,14 +10,29 @@ import ComposableArchitecture
 import KakaoSDKCommon
 import KakaoSDKAuth
 
+@MainActor
+private enum AppURLRouter {
+    static func handle(_ url: URL) -> Bool {
+        #if DEBUG
+        print("[DEBUG] App received URL: \(url.absoluteString)")
+        #endif
+
+        if AuthApi.isKakaoTalkLoginUrl(url) {
+            return AuthController.handleOpenUrl(url: url)
+        }
+
+        NaverSignInManager.shared.handleOpenURL(url)
+        return true
+    }
+}
+
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ app: UIApplication,
         open url: URL,
         options: [UIApplication.OpenURLOptionsKey : Any] = [:]
     ) -> Bool {
-        guard AuthApi.isKakaoTalkLoginUrl(url) else { return false }
-        return AuthController.handleOpenUrl(url: url)
+        AppURLRouter.handle(url)
     }
 }
 
@@ -44,9 +59,7 @@ struct MyApp: App {
                 UIToolbar.appearance().barTintColor = .white
             }
             .onOpenURL { url in
-                if AuthApi.isKakaoTalkLoginUrl(url) {
-                    _ = AuthController.handleOpenUrl(url: url)
-                }
+                _ = AppURLRouter.handle(url)
             }
         }
     }

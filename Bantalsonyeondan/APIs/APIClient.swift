@@ -281,19 +281,27 @@ struct UserAPIClient: APIClient {
         return try await loginWithKakao(accessToken: accessToken)
     }
 
-    /// 네이버 로그인: Authorization Code + State 획득 후 서버 로그인
+    /// 네이버 로그인: 백엔드 authorization URL을 열고 return-url result를 받아 앱 세션으로 변환
     func loginWithNaverAsync() async throws -> AuthResponse {
         let result = try await NaverSignInManager.shared.signInWithNaverAsync()
-        return try await login(
-            provider: "naver",
-            body: AppSocialLoginRequest(
-                code: result.code,
-                accessToken: nil,
-                id: nil,
-                state: result.state,
-                nonce: nil
+        switch result.outcome {
+        case .success:
+            return AuthResponse(
+                accessToken: naverPlaceholderAccessToken,
+                refreshToken: nil,
+                memberId: nil,
+                role: nil,
+                isNewUser: false
             )
-        )
+        case .signup, .emptyNickname:
+            return AuthResponse(
+                accessToken: naverPlaceholderAccessToken,
+                refreshToken: nil,
+                memberId: nil,
+                role: nil,
+                isNewUser: true
+            )
+        }
     }
 
     /// 애플 로그인 전체 플로우: Apple 인증 + 서버 로그인
@@ -324,11 +332,15 @@ struct UserAPIClient: APIClient {
     }
 
     private func loginWithKakao(accessToken: String) async throws -> AuthResponse {
+        // fetch kakao user id using the access token
         let userId = try await fetchCurrentKakaoUserId(accessToken: accessToken)
+        // The backend expects either an authorization code or an access token. When the client
+        // already obtained an access token via the Kakao SDK, send only the access token payload
+        // and omit `code` entirely so the backend does not treat an empty string as a real code.
         return try await login(
             provider: "kakao",
             body: AppSocialLoginRequest(
-                code: accessToken,
+                code: nil,
                 accessToken: accessToken,
                 id: userId,
                 state: nil,
@@ -375,4 +387,10 @@ struct UserAPIClient: APIClient {
 
 private struct KakaoUserIDResponse: Decodable {
     let id: Int64
+}
+
+private extension UserAPIClient {
+    var naverPlaceholderAccessToken: String {
+        "naver-oauth-session"
+    }
 }

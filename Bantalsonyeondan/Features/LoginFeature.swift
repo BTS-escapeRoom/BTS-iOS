@@ -92,7 +92,9 @@ struct LoginFeature: Reducer {
                 do {
                     member = try await memberAPIClient.getMyMembers()
                 } catch {
-                    // Login can still be considered successful if member profile fetch fails.
+                    if !session.isNewUser {
+                        throw error
+                    }
                 }
                 await send(.loginSucceeded(session, member))
             } catch {
@@ -139,6 +141,7 @@ struct LoginFeature: Reducer {
             }
         }
 
-        return error.localizedDescription
+        let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        return message.isEmpty ? "로그인 중 오류가 발생했어요. 다시 시도해주세요." : message
     }
 }

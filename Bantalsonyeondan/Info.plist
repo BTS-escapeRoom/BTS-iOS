@@ -35,6 +35,8 @@
 	<string>87XRcRkTrKm_jRmKqsVb</string>
 	<key>NaverClientSecret</key>
 	<string>XRsjyrij5R</string>
+	<key>NaverAuthorizeRedirectURI</key>
+	<string>https://apis.bangtal-boys.com/oauth2/authorization/naver</string>
 	<key>NaverRedirectURI</key>
 	<string>naverbangtalsonyeondan://auth</string>
 	<key>UIAppFonts</key>
