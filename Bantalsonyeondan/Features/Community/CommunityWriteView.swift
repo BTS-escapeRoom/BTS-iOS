@@ -52,11 +52,12 @@ struct CommunityWriteView: View {
     init(
         editingBoard: BoardDetail? = nil,
         fallbackBoard: Board? = nil,
+        initialTheme: Theme? = nil,
         onCompleted: (() -> Void)? = nil
     ) {
         self.editingBoardId = editingBoard?.id
         self.onCompleted = onCompleted
-        self.shouldAllowThemeSelection = editingBoard == nil
+        self.shouldAllowThemeSelection = editingBoard == nil && initialTheme == nil
 
         let resolvedTitle = editingBoard?.title ?? fallbackBoard?.title ?? ""
         let resolvedRecruitCount: String = {
@@ -73,7 +74,7 @@ struct CommunityWriteView: View {
         let resolvedContactMethodRaw = editingBoard?.contact_method ?? fallbackBoard?.contactMethod
         let resolvedContactUrl = editingBoard?.contact_url ?? fallbackBoard?.contactUrl ?? ""
         let resolvedContent = editingBoard?.description ?? ""
-        let resolvedTheme = CommunityWriteView.convertTheme(from: editingBoard?.theme)
+        let resolvedTheme = CommunityWriteView.convertTheme(from: editingBoard?.theme) ?? initialTheme
 
         _title = State(initialValue: resolvedTitle)
         _recruitCount = State(initialValue: resolvedRecruitCount)
@@ -309,7 +310,7 @@ struct CommunityWriteView: View {
             status: nil,
             store: detail.store?.name ?? "",
             city: detail.store?.location ?? "",
-            dictrict: nil
+            district: ""
         )
     }
 }
@@ -349,9 +350,9 @@ struct ThemeInfoCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(theme.title)
                     .font(.headline)
-                Text(theme.genre ?? "")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                if let genrePresentation = theme.genrePresentation {
+                    ThemeGenreBadge(presentation: genrePresentation)
+                }
                 ThemeDifficultyView(difficulty: difficulty ?? 0.0)
                 HStack(spacing: 8) {
                     Text("플레이타임: \(theme.time ?? 0)분")
