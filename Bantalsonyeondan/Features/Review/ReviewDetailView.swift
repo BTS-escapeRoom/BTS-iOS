@@ -106,30 +106,18 @@ private struct ReviewRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                // 추천/비추천 뱃지
+                if review.isMyReview == true {
+                    Image("내가 쓴 리뷰")
+                }
+                
                 if let isSuccess = review.isSuccess {
                     if isSuccess {
-                        Label("추천해요", systemImage: "hand.thumbsup.fill")
-                            .font(.caption2)
-                            .padding(4)
-                            .background(Color.green.opacity(0.15))
-                            .cornerRadius(6)
+                        Image("탈출성공")
                     } else {
-                        Label("탈출실패", systemImage: "hand.thumbsdown.fill")
-                            .font(.caption2)
-                            .padding(4)
-                            .background(Color.red.opacity(0.15))
-                            .cornerRadius(6)
+                        Image("탈출실패")
                     }
                 }
-                // 탈출성공/실패 뱃지
-                if let isSuccess = review.isSuccess {
-                    Text(isSuccess ? "탈출성공" : "탈출실패")
-                        .font(.caption2)
-                        .padding(4)
-                        .background(isSuccess ? Color.green.opacity(0.15) : Color.red.opacity(0.15))
-                        .cornerRadius(6)
-                }
+
                 Spacer()
                 if let nickname = review.nickname {
                     Text(nickname)
@@ -151,22 +139,22 @@ private struct ReviewRowView: View {
                     }
                 }
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                
                 HStack(spacing: 12) {
                     if let people = review.people {
-                        Text("플레이어 \(people)명")
+                        Text("플레이원: \(people)명")
                     }
-                    Divider()
-                    if let hints = review.hints {
-                        Text("힌트 \(hints)개")
+                    if let time = review.time {
+                        Divider()
+                        Text(formattedTime(time))
                     }
-                    Divider()
-                    Text(formattedTime(review.time))
-                    Divider()
-                    Text("방문일 \(formattedDate(review.visitDate))")
                 }
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.subheadline)
+                
+                if let visitDate = review.visitDate {
+                    Text("방문일: \(formattedDate(visitDate))")
+                        .font(.subheadline)
+                }
             }
             // 리뷰 내용
             if let content = review.content {
