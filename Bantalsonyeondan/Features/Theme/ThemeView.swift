@@ -232,12 +232,18 @@ struct ThemeCardView: View {
             }
             
             HStack(spacing: 6) {
-                Text(theme.genreType)
+                Text("\(theme.city)")
+                    .font(.bold(.caption2)())
+                Divider()
+                Text("\(theme.district)")
                     .font(.caption2)
-                    .padding(.horizontal, 3)
-                    .padding(.vertical, 3)
-                    .background(Color.blue.opacity(0.2))
-                    .cornerRadius(4)
+            }
+            
+            HStack(spacing: 8) {
+                if let genrePresentation = theme.genrePresentation {
+                    ThemeGenreBadge(presentation: genrePresentation)
+                        .padding(.trailing, 2)
+                }
                 HStack(spacing: 2) {
                     Image(systemName: "clock")
                         .font(.caption2)
@@ -252,6 +258,14 @@ struct ThemeCardView: View {
         .background(Color(UIColor.systemBackground))
         //        .cornerRadius(12)
         //        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+}
+
+struct ThemeGenreBadge: View {
+    let presentation: ThemeGenrePresentation
+
+    var body: some View {
+        Image(presentation.assetName)
     }
 }
 
