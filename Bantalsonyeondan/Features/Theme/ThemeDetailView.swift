@@ -13,6 +13,7 @@ struct ThemeDetailView: View {
     let isAuthenticated: Bool
     let onRequireLogin: () -> Void
     let onDismiss: () -> Void
+    @State private var isShowingRecruitWriteView = false
 
     init(
         themeInfo: ThemeDetail,
@@ -52,6 +53,7 @@ struct ThemeDetailView: View {
                 }
             }
             .padding()
+            .background(.white)
             
             Divider()
             
@@ -103,10 +105,17 @@ struct ThemeDetailView: View {
                                             HStack {
                                                 ForEach(themeInfo.weekdaysTimeList) { timeSlot in
                                                     Text(timeSlot.time)
+                                                        .foregroundColor(.gray)
                                                         .padding(.horizontal, 12)
                                                         .padding(.vertical, 6)
-                                                        .background(Color.gray.opacity(0.2))
-                                                        .cornerRadius(20)
+                                                        .background(
+                                                            Capsule()
+                                                                .fill(Color.white)
+                                                        )
+                                                        .overlay(
+                                                            Capsule()
+                                                                .strokeBorder(Color.gray.opacity(0.55), lineWidth: 1)
+                                                        )
                                                 }
                                             }
                                         }
@@ -120,21 +129,79 @@ struct ThemeDetailView: View {
                 }
             }
             if selectedTab != .review {
-                Button(action: {
-                    if let urlString = themeInfo.reservationUrl, let url = URL(string: urlString) {
-                        UIApplication.shared.open(url)
+                VStack(spacing: 12) {
+                    if themeInfo.isAvailable {
+                        Button(action: {
+                            if isAuthenticated {
+                                isShowingRecruitWriteView = true
+                            } else {
+                                onRequireLogin()
+                            }
+                        }) {
+                            Text("모집하기")
+                                .font(.system(size: 16, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.white)
+                                .foregroundColor(Color.accentColor)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.accentColor, lineWidth: 1.5)
+                                )
+                                .cornerRadius(8)
+                        }
+
+                        Button(action: {
+                            if let urlString = themeInfo.reservationUrl, let url = URL(string: urlString) {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            Text("바로 예약")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.black)
+                                .foregroundColor(.white)
+                                .cornerRadius(8)
+                        }
+                    } else {
+                        Button(action: {}) {
+                            Text("이용 불가 테마")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color(.systemGray4))
+                                .foregroundColor(.white)
+                                .cornerRadius(8)
+                        }
+                        .disabled(true)
                     }
-                }) {
-                    Text("바로 예약")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.black)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
                 }
                 .padding(.horizontal)
             }
         }
+        .background(.white)
+        .fullScreenCover(isPresented: $isShowingRecruitWriteView) {
+            CommunityWriteView(initialTheme: recruitTheme) {
+                isShowingRecruitWriteView = false
+            }
+        }
+    }
+
+    private var recruitTheme: Theme {
+        Theme(
+            id: themeInfo.id,
+            thumbnail: themeInfo.thumbnail,
+            title: themeInfo.title,
+            minimumPeople: themeInfo.minimumPeople,
+            maximumPeople: themeInfo.maximumPeople,
+            difficulty: Double(themeInfo.difficulty),
+            genre: themeInfo.genre,
+            time: themeInfo.time,
+            genreType: themeInfo.genreType ?? "",
+            status: themeInfo.status,
+            store: themeInfo.store?.name ?? "",
+            city: themeInfo.store?.location ?? "",
+            district: ""
+        )
     }
 
     private var reviewLoginRequiredView: some View {
@@ -160,6 +227,31 @@ struct ThemeDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
+    private var difficultyValue: Double {
+        Double(themeInfo.difficulty)
+    }
+
+    private var difficultyText: String {
+        let rounded = difficultyValue.rounded()
+        if abs(difficultyValue - rounded) < 0.001 {
+            return String(Int(rounded))
+        }
+        return String(format: "%.1f", difficultyValue)
+    }
+
+    private var styledParsedNotes: AttributedString {
+        var attributed = AttributedString(themeInfo.parsedNotes)
+
+        for index in themeInfo.parsedNotes.indices where themeInfo.parsedNotes[index] == "#" {
+            let nextIndex = themeInfo.parsedNotes.index(after: index)
+            if let range = Range(index..<nextIndex, in: attributed) {
+                attributed[range].foregroundColor = .accentColor
+            }
+        }
+
+        return attributed
+    }
     
     var themeDetailView: some View {
         HStack(alignment: .top, spacing: 16) {
@@ -181,14 +273,9 @@ struct ThemeDetailView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(themeInfo.title)
                     .font(.headline)
-                HStack() {
-                    if let genre = themeInfo.genreType ?? themeInfo.genre {
-                        Text(genre)
-                            .font(.caption)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(4)
+                HStack {
+                    if let genrePresentation = themeInfo.genrePresentation {
+                        ThemeGenreBadge(presentation: genrePresentation)
                     }
                     let time = themeInfo.time
                     HStack(spacing: 4) {
@@ -201,11 +288,52 @@ struct ThemeDetailView: View {
                     Text("인원: \(min)~\(max)인")
                         .font(.caption)
                 }
-                
-                Text("난이도: \(themeInfo.difficulty)")
-                    .font(.caption)
+
+                HStack(spacing: 8) {
+                    Text("난이도:")
+                        .font(.caption)
+                    ThemeDetailDifficultyView(difficulty: difficultyValue)
+                    Text(difficultyText)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                if !themeInfo.parsedNotes.isEmpty {
+                    Text(styledParsedNotes)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
             Spacer()
         }
+    }
+}
+
+private struct ThemeDetailDifficultyView: View {
+    let difficulty: Double
+
+    var body: some View {
+        HStack(spacing: 1) {
+            ForEach(Array(iconNames.enumerated()), id: \.offset) { _, imageName in
+                Image(imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 9, height: 9)
+            }
+        }
+    }
+
+    private var iconNames: [String] {
+        let fullCount = Int(difficulty)
+        let hasHalfIcon = difficulty - Double(fullCount) >= 0.5
+
+        var names = Array(repeating: "icon_locker_bold_full", count: fullCount)
+        if hasHalfIcon {
+            names.append("icon_locker_bold_half")
+        }
+
+        return names
     }
 }
