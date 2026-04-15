@@ -13,6 +13,7 @@
 		510DF09C2D53821500221739 /* BaseEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510DF09B2D53821500221739 /* BaseEntity.swift */; };
 		514138352EC4B1D40047BAF4 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 514138342EC4B1D40047BAF4 /* LaunchScreen.storyboard */; };
 		514A91662EA90B0A009DDE4B /* AppleSignInButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 514A91652EA90B0A009DDE4B /* AppleSignInButton.swift */; };
+		515292002F8FE1600018DBCB /* MemberHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515291FF2F8FE1600018DBCB /* MemberHistoryView.swift */; };
 		515857C42E9FBD8B002ACE2C /* MyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515857C32E9FBD8B002ACE2C /* MyView.swift */; };
 		515857C62E9FBDE3002ACE2C /* MyFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515857C52E9FBDE3002ACE2C /* MyFeature.swift */; };
 		515857C92E9FCA81002ACE2C /* BoardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515857C82E9FCA81002ACE2C /* BoardDetailView.swift */; };
@@ -64,9 +65,9 @@
 		51DF46AC2DAFDD2600FA49EB /* ThemeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46AA2DAFDD2600FA49EB /* ThemeView.swift */; };
 		51DF46AD2DAFDD2600FA49EB /* ThemeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46A92DAFDD2600FA49EB /* ThemeFeature.swift */; };
 		51DF46B12DAFFF3300FA49EB /* CustomSearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46B02DAFFF3300FA49EB /* CustomSearchBar.swift */; };
-		52E0A0022F5A100100AAA111 /* UIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E0A0012F5A100100AAA111 /* UIComponents.swift */; };
 		51DF46B32DE733CC00FA49EB /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DF46B22DE733CC00FA49EB /* LocationManager.swift */; };
 		51F384082F3F8A790096FA69 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 51F384072F3F8A790096FA69 /* ComposableArchitecture */; };
+		52E0A0022F5A100100AAA111 /* UIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E0A0012F5A100100AAA111 /* UIComponents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,6 +95,7 @@
 		514138342EC4B1D40047BAF4 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		514A91642EA907A0009DDE4B /* BantalsonyeondanRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BantalsonyeondanRelease.entitlements; sourceTree = "<group>"; };
 		514A91652EA90B0A009DDE4B /* AppleSignInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInButton.swift; sourceTree = "<group>"; };
+		515291FF2F8FE1600018DBCB /* MemberHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberHistoryView.swift; sourceTree = "<group>"; };
 		515857C32E9FBD8B002ACE2C /* MyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyView.swift; sourceTree = "<group>"; };
 		515857C52E9FBDE3002ACE2C /* MyFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFeature.swift; sourceTree = "<group>"; };
 		515857C82E9FCA81002ACE2C /* BoardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardDetailView.swift; sourceTree = "<group>"; };
@@ -183,6 +185,7 @@
 		5103A8A92E4CB11400234D0C /* Community */ = {
 			isa = PBXGroup;
 			children = (
+				515291FF2F8FE1600018DBCB /* MemberHistoryView.swift */,
 				515857C82E9FCA81002ACE2C /* BoardDetailView.swift */,
 				515857CC2E9FCBDA002ACE2C /* BoardDetailFeature.swift */,
 				5103A8AA2E4CB12C00234D0C /* CommunityFeature.swift */,
@@ -552,6 +555,7 @@
 				51619C952D6601AB00E8E866 /* APIConfig.swift in Sources */,
 				51A0CBD22EE0606600BC8E73 /* AppleSignInManager.swift in Sources */,
 				518390062E5F36D20083B7F9 /* CommunityWriteView.swift in Sources */,
+				515292002F8FE1600018DBCB /* MemberHistoryView.swift in Sources */,
 				51619C912D618F3100E8E866 /* StoreInfo.swift in Sources */,
 				51619C8F2D618F2D00E8E866 /* Board.swift in Sources */,
 				516086A32CE4CAEA0094EAC9 /* NicknameSetupedView.swift in Sources */,
