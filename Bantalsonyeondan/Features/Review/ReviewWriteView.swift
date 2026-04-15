@@ -31,7 +31,6 @@ private struct ReviewFormDraft {
     let hints: Int
     let visitDate: String?
     let isSuccess: Bool
-    let isRecommend: Bool
 
     func makeCreateRequest(themeId: Int) -> ReviewRegist {
         ReviewRegist(
@@ -94,10 +93,18 @@ struct ReviewWriteView: View {
     @State private var scareScore: Int
     @State private var isSuccess: Bool
     @State private var content: String
-    @State private var isRecommend: Bool
+    @FocusState private var isContentEditorFocused: Bool
 
     @State private var hasSubmittedCreate: Bool = false
     @State private var createErrorMessage: String? = nil
+
+    private var visitDateDisplayText: String {
+        Self.displayDateFormatter.string(from: visitDate)
+    }
+
+    private var contentCountText: String {
+        "\(content.count)/300"
+    }
 
     init(
         store: StoreOf<ReviewFeature>,
@@ -107,18 +114,17 @@ struct ReviewWriteView: View {
         self.mode = .create(store: store, themeId: themeId, onComplete: onComplete)
         _visitDate = State(initialValue: Date())
         _isVisitDateUnknown = State(initialValue: false)
-        _difficulty = State(initialValue: 0.5)
+        _difficulty = State(initialValue: 3.0)
         _minuteText = State(initialValue: "")
         _secondText = State(initialValue: "")
         _timeType = State(initialValue: .elapsed)
         _peopleText = State(initialValue: "")
         _hintsText = State(initialValue: "")
         _isHintsUnknown = State(initialValue: false)
-        _activityScore = State(initialValue: 0)
-        _scareScore = State(initialValue: 0)
+        _activityScore = State(initialValue: 3)
+        _scareScore = State(initialValue: 3)
         _isSuccess = State(initialValue: false)
         _content = State(initialValue: "")
-        _isRecommend = State(initialValue: false)
     }
 
     init(
@@ -144,11 +150,10 @@ struct ReviewWriteView: View {
         _peopleText = State(initialValue: "\(review.people ?? 0)")
         _hintsText = State(initialValue: "\(review.hints ?? 0)")
         _isHintsUnknown = State(initialValue: review.hints == nil)
-        _activityScore = State(initialValue: review.activityScore ?? 0)
-        _scareScore = State(initialValue: review.scareScore ?? 0)
+        _activityScore = State(initialValue: review.activityScore ?? 3)
+        _scareScore = State(initialValue: review.scareScore ?? 3)
         _isSuccess = State(initialValue: review.isSuccess ?? false)
         _content = State(initialValue: review.content ?? "")
-        _isRecommend = State(initialValue: review.isSuccess ?? false)
     }
 
     var body: some View {
@@ -210,60 +215,72 @@ struct ReviewWriteView: View {
         onCancel: (() -> Void)?,
         onSubmit: @escaping (ReviewFormDraft) -> Void
     ) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
                 Group {
                     HStack {
                         Text("방문일")
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                         Spacer()
+                        
                         if !isVisitDateUnknown {
-                            DatePicker("", selection: $visitDate, displayedComponents: .date)
-                                .labelsHidden()
+                            ZStack(alignment: .trailing) {
+                                DatePicker("", selection: $visitDate, displayedComponents: .date)
+                                    .labelsHidden()
+                                    .datePickerStyle(.compact)
+                                    .scaleEffect(0.8, anchor: .trailing)
+                                    .opacity(1)
+                            }
                         }
-                        Toggle("기억 안나요", isOn: $isVisitDateUnknown)
-                            .labelsHidden()
-                            .toggleStyle(ReviewCheckboxToggleStyle())
+                        HStack(spacing: 8) {
+                            Toggle("기록 안함", isOn: $isVisitDateUnknown)
+                                .labelsHidden()
+                                .toggleStyle(.button)
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("체감 난이도")
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                         HStack {
                             Slider(value: $difficulty, in: 0...5, step: 0.5)
                             Text(String(format: "%.1f", difficulty))
                                 .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(.purple)
+                                .foregroundStyle(Color.accentColor)
                                 .frame(width: 40, alignment: .trailing)
                         }
                     }
-
-                    VStack(alignment: .leading, spacing: 8) {
+                    
+                    HStack(spacing: 8) {
                         Text("플레이타임")
-                            .font(.system(size: 20, weight: .bold))
-                        HStack(spacing: 8) {
-                            TextField("분", text: $minuteText)
-                                .keyboardType(.numberPad)
-                                .textFieldStyle(.roundedBorder)
-                            Text("분")
-                            TextField("초", text: $secondText)
-                                .keyboardType(.numberPad)
-                                .textFieldStyle(.roundedBorder)
-                            Text("초")
-                        }
+                            .font(.system(size: 14, weight: .bold))
+                        Spacer()
+                        TextField("0", text: $minuteText)
+                            .keyboardType(.numberPad)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 40)
+                        Text("분")
+                        TextField("0", text: $secondText)
+                            .keyboardType(.numberPad)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 40)
+                        Text("초")
                         Picker("", selection: $timeType) {
                             ForEach(ReviewFormTimeType.allCases) { type in
                                 Text(type.title).tag(type)
                             }
                         }
-                        .pickerStyle(.segmented)
+                        .pickerStyle(.menu)
+                        .frame(minWidth: 90)
+                        .fixedSize()
                     }
                 }
 
                 Group {
                     HStack {
                         Text("플레이 인원")
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                         Spacer()
                         TextField("0", text: $peopleText)
                             .keyboardType(.numberPad)
@@ -274,7 +291,7 @@ struct ReviewWriteView: View {
 
                     HStack {
                         Text("사용 힌트 수")
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                         Spacer()
                         if !isHintsUnknown {
                             TextField("0", text: $hintsText)
@@ -285,7 +302,7 @@ struct ReviewWriteView: View {
                         }
                         Toggle("기록 안함", isOn: $isHintsUnknown)
                             .labelsHidden()
-                            .toggleStyle(ReviewCheckboxToggleStyle())
+                            .toggleStyle(.button)
                     }
 
                     ReviewScoreSelector(title: "활동성", score: $activityScore)
@@ -298,30 +315,30 @@ struct ReviewWriteView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(isSuccess ? Color.purple.opacity(0.2) : Color.clear)
+                    .background(Color.clear)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(isSuccess ? Color.purple : Color(UIColor.systemGray4), lineWidth: 1)
+                            .stroke(isSuccess ? Color.accentColor : Color(UIColor.systemGray4), lineWidth: 1)
                     )
+                    .foregroundStyle(isSuccess ? Color.accentColor : Color.gray)
 
                     Button("탈출 못했어요") {
                         isSuccess = false
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(!isSuccess ? Color.purple.opacity(0.2) : Color.clear)
+                    .background(Color.clear)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .stroke(!isSuccess ? Color.purple : Color(UIColor.systemGray4), lineWidth: 1)
+                            .stroke(!isSuccess ? Color.accentColor : Color(UIColor.systemGray4), lineWidth: 1)
                     )
+                    .foregroundStyle(!isSuccess ? Color.accentColor : Color.gray)
                 }
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color("cod_gray"))
+                .font(.system(size: 16, weight: .bold))
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("리뷰")
-                        .font(.system(size: 20, weight: .bold))
                     TextEditor(text: $content)
+                        .focused($isContentEditorFocused)
                         .frame(height: 120)
                         .padding(6)
                         .overlay(
@@ -330,21 +347,24 @@ struct ReviewWriteView: View {
                         )
                         .overlay(alignment: .topLeading) {
                             if content.isEmpty {
-                                Text("테마 후기를 남겨주세요.")
+                                Text("테마에 대한 자세한 후기를 남겨주세요! (최대 300자, 스포가 포함되어 있으면 임의 삭제처리 될 수 있습니다)")
                                     .font(.system(size: 14))
                                     .foregroundStyle(Color(UIColor.systemGray3))
                                     .padding(.top, 14)
                                     .padding(.leading, 12)
                             }
                         }
-                }
+                        .onChange(of: content) { newValue in
+                            if newValue.count > 300 {
+                                content = String(newValue.prefix(300))
+                            }
+                        }
 
-                HStack {
-                    Toggle("이 테마 추천하기", isOn: $isRecommend)
-                        .toggleStyle(ReviewCheckboxToggleStyle())
-                    if isRecommend {
-                        Label("추천해요!", systemImage: "hand.thumbsup.fill")
-                            .foregroundColor(.purple)
+                    HStack {
+                        Spacer()
+                        Text(contentCountText)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(content.count >= 300 ? Color.accentColor : Color(UIColor.systemGray2))
                     }
                 }
 
@@ -358,8 +378,22 @@ struct ReviewWriteView: View {
                 .background(Color("cod_gray"))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .disabled(isSubmitting)
+                
+                Color.clear
+                    .frame(height: 5)
+                    .id("review-submit-bottom-anchor")
             }
             .padding(16)
+            }
+            .onChange(of: isContentEditorFocused) { isFocused in
+                guard isFocused else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        proxy.scrollTo("review-submit-bottom-anchor", anchor: .bottom)
+                    }
+                }
+            }
         }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
@@ -393,8 +427,7 @@ struct ReviewWriteView: View {
             difficulty: difficulty,
             hints: resolvedHints,
             visitDate: isVisitDateUnknown ? nil : Self.serverDateFormatter.string(from: visitDate),
-            isSuccess: isSuccess,
-            isRecommend: isRecommend
+            isSuccess: isSuccess
         )
     }
 
@@ -417,6 +450,14 @@ struct ReviewWriteView: View {
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
         return formatter
     }
+
+    private static var displayDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy.MM.dd"
+        return formatter
+    }
 }
 
 private struct ReviewScoreSelector: View {
@@ -426,7 +467,7 @@ private struct ReviewScoreSelector: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 14, weight: .bold))
             HStack {
                 ForEach(0...5, id: \.self) { number in
                     Button {
@@ -438,10 +479,10 @@ private struct ReviewScoreSelector: View {
                                 .frame(width: 14, height: 14)
                                 .background(
                                     Circle()
-                                        .fill(score == number ? Color.purple : Color.clear)
+                                        .fill(score == number ? Color.accentColor : Color.clear)
                                 )
                             Text("\(number)")
-                                .font(.system(size: 16, weight: .regular))
+                                .font(.system(size: 14, weight: .regular))
                                 .foregroundStyle(Color("cod_gray"))
                         }
                     }
@@ -449,17 +490,6 @@ private struct ReviewScoreSelector: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-        }
-    }
-}
-
-struct ReviewCheckboxToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack {
-            configuration.label
-            Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
-                .foregroundColor(configuration.isOn ? .purple : .gray)
-                .onTapGesture { configuration.isOn.toggle() }
         }
     }
 }
