@@ -112,9 +112,9 @@ struct ThemeRowView: View {
                     .font(.body)
                     .foregroundColor(.black)
                 HStack(spacing: 4) {
-                    Text(theme.genre ?? "")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
+                    if let genrePresentation = theme.genrePresentation {
+                        ThemeGenreBadge(presentation: genrePresentation)
+                    }
                 }
                 Text(theme.store)
                     .font(.caption2)
@@ -124,7 +124,7 @@ struct ThemeRowView: View {
             if isSelected {
                 Text("선택됨")
                     .font(.caption)
-                    .foregroundColor(.purple)
+                    .foregroundColor(Color.accentColor)
                     .padding(.trailing, 8)
             }
         }
