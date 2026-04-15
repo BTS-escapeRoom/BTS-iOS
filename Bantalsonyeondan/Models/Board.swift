@@ -55,7 +55,7 @@ struct BoardDetail: Decodable, Equatable {
     let reportStatus: String?
     let likeCount: Int
     let commentCount: Int
-    let theme: ThemeDetail
+    let theme: ThemeDetail?
     let isLike: Bool?
 }
 

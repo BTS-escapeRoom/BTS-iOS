@@ -98,16 +98,18 @@ struct BoardDetailFeature: Reducer {
                 state.isLiked = detail.isLike ?? state.isLiked
                 state.likeCount = detail.likeCount
                 state.errorMessage = nil
-                let themeId = detail.theme.id
-                state.isLoadingTheme = true
-                return .run { send in
-                    do {
-                        let theme = try await themeAPIClient.fetchThemeById("\(themeId)")
-                        await send(.fetchThemeResponse(.success(theme)))
-                    } catch {
-                        await send(.fetchThemeResponse(.failure(error)))
+                if let themeId = detail.theme?.id {
+                    state.isLoadingTheme = true
+                    return .run { send in
+                        do {
+                            let theme = try await themeAPIClient.fetchThemeById("\(themeId)")
+                            await send(.fetchThemeResponse(.success(theme)))
+                        } catch {
+                            await send(.fetchThemeResponse(.failure(error)))
+                        }
                     }
                 }
+                return .none
             case let .failure(error):
                 state.errorMessage = error.localizedDescription
                 print(error.localizedDescription)
