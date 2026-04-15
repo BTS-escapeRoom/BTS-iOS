@@ -7,6 +7,7 @@ struct BoardDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingOwnerMenu: Bool = false
     @State private var isShowingEditView: Bool = false
+    @State private var memberHistoryTarget: MemberHistoryTarget? = nil
 
     init(
         store: StoreOf<BoardDetailFeature>,
@@ -29,6 +30,18 @@ struct BoardDetailView: View {
         return str
     }
 
+    private static func formattedCreatedAt(_ str: String?) -> String? {
+        guard let str, !str.isEmpty else { return nil }
+        if let date = ISO8601DateFormatter.iso8601WithOptionalFraction.date(from: str) ?? ISO8601DateFormatter().date(from: str) {
+            let df = DateFormatter()
+            df.locale = Locale(identifier: "ko_KR")
+            df.timeZone = .current
+            df.dateFormat = "yyyy.MM.dd HH:mm"
+            return df.string(from: date)
+        }
+        return str
+    }
+
     private func adaptTheme(from detail: ThemeDetail) -> Theme {
         Theme(
             id: detail.id,
@@ -43,7 +56,7 @@ struct BoardDetailView: View {
             status: nil,
             store: detail.store?.name ?? "",
             city: detail.store?.location ?? "",
-            dictrict: nil
+            district: ""
         )
     }
 
@@ -121,14 +134,51 @@ struct BoardDetailView: View {
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    // 작성자/조회수 메타
+                    // 작성자/조회수/작성일 메타
                     HStack(spacing: 8) {
-                        Text(viewStore.board?.memberName ?? "")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text("· 조회수 \(viewStore.detail?.hit ?? viewStore.board?.hit ?? 0)")
-                            .font(.caption)
-                            .foregroundColor(.gray)
+                        // 프로필 이미지 (탭 시 해당 멤버의 방탈출 기록 표시)
+                        Button {
+                            if let mid = viewStore.board?.memberId ?? viewStore.detail?.memberId {
+                                memberHistoryTarget = MemberHistoryTarget(
+                                    id: mid,
+                                    name: viewStore.board?.memberName ?? viewStore.detail?.memberName ?? "멤버"
+                                )
+                            }
+                        } label: {
+                            if let profileImgStr = viewStore.board?.profileImg ?? viewStore.detail?.profileImg,
+                               let url = URL(string: profileImgStr) {
+                                CachedAsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image.resizable().scaledToFill()
+                                    default:
+                                        Color.gray.opacity(0.2)
+                                    }
+                                }
+                                .frame(width: 28, height: 28)
+                                .clipShape(Circle())
+                            } else {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(width: 28, height: 28)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 8) {
+                                Text(viewStore.board?.memberName ?? "")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("조회수 \(viewStore.detail?.hit ?? viewStore.board?.hit ?? 0)")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            if let dateStr = Self.formattedCreatedAt(viewStore.board?.createdAt) {
+                                Text("\(dateStr)")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                        }
                         Spacer()
                         if viewStore.isMine {
                             Button {
@@ -180,14 +230,15 @@ struct BoardDetailView: View {
                         }
                     }
                     .padding(14)
-                    .background(Color(.systemGray6))
                     .cornerRadius(12)
 
-                    // 테마 정보 섹션
-                    themeInfoSection(viewStore)
+                    // 테마 정보 섹션 (테마가 연결된 경우에만 표시)
+                    if viewStore.themeDetail != nil || (viewStore.board?.themeName?.isEmpty == false) {
+                        themeInfoSection(viewStore)
+                    }
 
                     // 모집 내용
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 20) {
                         HStack { Text("모집 내용").font(.subheadline).bold(); Spacer() }
                         Divider()
                         Text(viewStore.detail?.description ?? "")
@@ -204,30 +255,56 @@ struct BoardDetailView: View {
                                 viewStore.send(.tapToggleLike)
                             } label: {
                                 HStack(spacing: 6) {
-                                    Image(systemName: viewStore.isLiked ? "heart.fill" : "heart")
-                                        .foregroundColor(viewStore.isLiked ? .red : .gray)
+                                    Image(systemName: "heart.fill")
+                                        .foregroundColor(viewStore.isLiked ? Color(.cyan).opacity(0.8) : .gray)
                                     Text("관심 \(viewStore.likeCount)")
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 10)
-                                .background(Capsule().fill(Color(.systemGray6)))
+                                .background(Capsule().fill(viewStore.isLiked ? Color(.cyan).opacity(0.2) : .clear))
                                 .overlay(Capsule().stroke(Color(.systemGray3), lineWidth: 1))
                             }
                             .buttonStyle(.plain)
                             .disabled(viewStore.isTogglingLike)
                             Spacer()
-                            Text("댓글 \(viewStore.commentsTotalCount)")
-                                .font(.subheadline).bold()
+                            HStack(spacing: 4) {
+                                Image("icon-comment")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 16, height: 16)
+                                Text("댓글 \(viewStore.commentsTotalCount)")
+                                    .font(.subheadline).bold()
+                            }
                         }
 
                         ForEach(viewStore.comments, id: \.id) { comment in
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
-                                    Circle()
-                                        .fill(Color.gray.opacity(0.2))
-                                        .frame(width: 32, height: 32)
+                                    Button {
+                                        if let mid = comment.memberId {
+                                            memberHistoryTarget = MemberHistoryTarget(id: mid, name: comment.memberName)
+                                        }
+                                    } label: {
+                                        if let imgStr = comment.profileImg, let url = URL(string: imgStr) {
+                                            CachedAsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .success(let image):
+                                                    image.resizable().scaledToFill()
+                                                default:
+                                                    Color.gray.opacity(0.2)
+                                                }
+                                            }
+                                            .frame(width: 32, height: 32)
+                                            .clipShape(Circle())
+                                        } else {
+                                            Circle()
+                                                .fill(Color.gray.opacity(0.2))
+                                                .frame(width: 32, height: 32)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(comment.memberName)
                                             .font(.caption)
@@ -243,10 +320,11 @@ struct BoardDetailView: View {
                             .padding(.vertical, 8)
                             Divider()
                         }
-                    }
-                }
-                .padding(16)
-            }
+                    } // 댓글 섹션 end
+                } // VStack end
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            } // ScrollView end
             .safeAreaInset(edge: .bottom) {
                 HStack(spacing: 8) {
                     TextField(
@@ -347,6 +425,14 @@ struct BoardDetailView: View {
                         onBoardChanged?()
                     }
                 )
+            }
+            .sheet(item: $memberHistoryTarget) { target in
+                MemberHistoryView(
+                    memberId: target.id,
+                    memberName: target.name
+                )
+                .presentationDetents([.fraction(0.85)])
+                .presentationDragIndicator(.visible)
             }
             .overlay {
                 if viewStore.isUpdatingBoardAction {
