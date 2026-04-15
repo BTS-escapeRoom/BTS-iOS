@@ -62,10 +62,19 @@ struct CommunityFeature: Reducer {
             state.isLoading = false
             switch result {
             case let .success(boardResponse):
+                let filtered: [Board] = state.isOnlyRecruiting
+                    ? boardResponse.boards.filter { board in
+                        guard let deadline = board.recruitDeadline,
+                              let date = ISO8601DateFormatter.iso8601WithOptionalFraction.date(from: deadline)
+                                ?? ISO8601DateFormatter().date(from: deadline)
+                        else { return true } // 마감일 없으면 모집중으로 간주
+                        return date.timeIntervalSinceNow > 0
+                    }
+                    : boardResponse.boards
                 if requestedPage <= 1 {
-                    state.boards = boardResponse.boards
+                    state.boards = filtered
                 } else {
-                    state.boards += boardResponse.boards
+                    state.boards += filtered
                 }
                 state.nextPage = boardResponse.nextPage
                 state.totalPage = boardResponse.totalPage
