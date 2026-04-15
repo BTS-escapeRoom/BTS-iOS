@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "icon_locker_bold_half.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
