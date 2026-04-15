@@ -607,23 +607,7 @@ private struct MyReviewCard: View {
             }
 
             HStack(spacing: 6) {
-                if item.isEscaped {
-                    Label("추천해요", systemImage: "hand.thumbsup.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color.purple)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Color.purple.opacity(0.14))
-                        .clipShape(RoundedRectangle(cornerRadius: 3))
-                }
-
-                Label(item.isEscaped ? "탈출성공" : "탈출실패", systemImage: "lock.fill")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(item.isEscaped ? Color.green : Color.red)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background((item.isEscaped ? Color.green : Color.red).opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 3))
+                item.isEscaped ? Image("탈출성공") : Image("탈출실패")
             }
 
             VStack(alignment: .leading, spacing: 4) {
