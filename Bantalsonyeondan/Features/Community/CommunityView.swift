@@ -76,12 +76,11 @@ struct CommunityView: View {
                             Spacer()
                         } else {
                             ScrollView {
-                                LazyVStack(spacing: 12) {
+                                LazyVStack(spacing: 8) {
                                     ForEach(viewStore.boards.indices, id: \.self) { index in
                                         let board = viewStore.boards[index]
                                         NavigationLink {
-                                            BoardDetailView(
-                                                store: StoreOf<BoardDetailFeature>(
+                                            BoardDetailView(                                                 store: StoreOf<BoardDetailFeature>(
                                                     initialState: BoardDetailFeature.State(boardId: board.id, board: board),
                                                     reducer: { BoardDetailFeature() }
                                                 ),
@@ -91,7 +90,6 @@ struct CommunityView: View {
                                             )
                                         } label: {
                                             BoardCardView(board: board)
-                                                .padding(.horizontal)
                                         }
                                         .buttonStyle(.plain)
                                         .onAppear {
@@ -100,8 +98,7 @@ struct CommunityView: View {
                                             }
                                         }
                                     }
-                                    
-                                    // 하단 로딩 인디케이터 (다음 페이지 로드 중)
+
                                     if viewStore.isLoading {
                                         ProgressView()
                                             .padding(.vertical, 16)
@@ -109,6 +106,7 @@ struct CommunityView: View {
                                 }
                                 .padding(.top, 8)
                             }
+                            .background(Color(UIColor.systemGray6))
                         }
                     }
                     .onAppear { viewStore.send(CommunityFeature.Action.onLoadNextPage) }
@@ -173,7 +171,8 @@ struct BoardCardView: View {
         }
 
         if interval <= 60 * 60 * 24 {
-            return ("0시간 전", true, false)
+            let hours = max(1, Int(ceil(interval / 3600)))
+            return ("마감 \(hours)시간 전", true, false)
         }
 
         let days = max(1, Int(ceil(interval / (60 * 60 * 24))))
@@ -217,14 +216,14 @@ struct BoardCardView: View {
                     .foregroundColor(
                         deadlineStatus.isClosed
                             ? Color(UIColor.systemGray)
-                            : (deadlineStatus.isUrgent ? Color.red : Color("cod_gray"))
+                            : (deadlineStatus.isUrgent ? Color(UIColor.systemGray) : Color("cod_gray"))
                     )
                     .padding(.vertical, 4)
                     .padding(.horizontal, 8)
                     .background(
                         deadlineStatus.isClosed
                             ? Color(UIColor.systemGray6)
-                            : Color(UIColor.systemGray5)
+                            : Color("EEEEEE")
                     )
                     .cornerRadius(8)
                 }
@@ -277,7 +276,7 @@ struct BoardCardView: View {
                 }
             }
             .padding(12)
-            .background(Color(.systemGray6))
+            .background(Color("FAFAFA"))
             .cornerRadius(12)
             
             HStack {
@@ -291,24 +290,54 @@ struct BoardCardView: View {
                         .foregroundColor(.gray)
                 }
 
-                if board.likeCount > 0 {
-                    Text("· 관심 \(board.likeCount)")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                }
-
-                if board.commentCount > 0 {
-                    Text("· 댓글 \(board.commentCount)")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                }
                 Spacer()
+
+                HStack(spacing: 10) {
+                    if board.likeCount > 0 {
+                        HStack(spacing: 3) {
+                            Image("icon-like")
+                                .resizable()
+                                .frame(width: 12, height: 11)
+                            Text("\(board.likeCount)")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
+
+                    if board.commentCount > 0 {
+                        HStack(spacing: 3) {
+                            Image("icon-comment")
+                                .resizable()
+                                .renderingMode(.template)
+                                .foregroundColor(.gray)
+                                .frame(width: 11, height: 10)
+                            Text("\(board.commentCount)")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
             }
         }
         .padding(14)
         .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.03), radius: 2, x: 0, y: 1)
+        .overlay(
+            Group {
+                if deadlineStatus?.isClosed == true {
+                    ZStack {
+                        Color.white.opacity(0.6)
+                        Text("모집마감")
+                            .font(.subheadline)
+                            .foregroundColor(Color(UIColor.systemGray))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color("EEEEEE"))
+                            .cornerRadius(10)
+                    }
+                    .cornerRadius(12)
+                }
+            }
+        )
     }
 }
 
@@ -329,9 +358,10 @@ struct CommunityCheckboxToggleStyle: ToggleStyle {
         HStack(spacing: 8) {
             Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
                 .foregroundColor(configuration.isOn ? .black : .gray)
-                .onTapGesture { configuration.isOn.toggle() }
             configuration.label
         }
+        .contentShape(Rectangle())
+        .onTapGesture { configuration.isOn.toggle() }
     }
 }
 
