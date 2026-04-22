@@ -23,6 +23,10 @@ struct BoardDetailFeature: Reducer {
         var toastMessage: String? = nil
         var errorMessage: String?
         var newCommentText: String = ""
+        // 신고
+        var reportTargetBoardId: Int? = nil
+        var reportTargetCommentId: Int? = nil
+        var isReporting: Bool = false
     }
     
     enum Action {
@@ -48,6 +52,11 @@ struct BoardDetailFeature: Reducer {
         case clearDismissRequest
         case clearMutationFlag
         case refresh
+        // 신고
+        case tapReportBoard(description: String)
+        case reportBoardResponse(Result<String, Error>)
+        case tapReportComment(commentId: Int, description: String)
+        case reportCommentResponse(Result<String, Error>)
     }
     
     @Dependency(\.boardAPIClient) var boardAPIClient
@@ -291,6 +300,51 @@ struct BoardDetailFeature: Reducer {
             state.isRecruitClosed = false
             state.isTogglingLike = false
             return .send(.onAppear)
+
+        case let .tapReportBoard(description):
+            guard !state.isReporting else { return .none }
+            state.isReporting = true
+            let boardId = state.boardId
+            return .run { send in
+                do {
+                    let result = try await boardAPIClient.reportBoard(boardId: boardId, description: description)
+                    await send(.reportBoardResponse(.success(result)))
+                } catch {
+                    await send(.reportBoardResponse(.failure(error)))
+                }
+            }
+
+        case let .reportBoardResponse(result):
+            state.isReporting = false
+            switch result {
+            case .success:
+                state.toastMessage = "신고가 접수되었어요."
+            case let .failure(error):
+                state.errorMessage = error.localizedDescription
+            }
+            return .none
+
+        case let .tapReportComment(commentId, description):
+            guard !state.isReporting else { return .none }
+            state.isReporting = true
+            return .run { send in
+                do {
+                    let result = try await commentAPIClient.reportComment(commentId: commentId, description: description)
+                    await send(.reportCommentResponse(.success(result)))
+                } catch {
+                    await send(.reportCommentResponse(.failure(error)))
+                }
+            }
+
+        case let .reportCommentResponse(result):
+            state.isReporting = false
+            switch result {
+            case .success:
+                state.toastMessage = "신고가 접수되었어요."
+            case let .failure(error):
+                state.errorMessage = error.localizedDescription
+            }
+            return .none
         }
     }
 
