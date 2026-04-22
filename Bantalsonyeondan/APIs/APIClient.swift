@@ -81,6 +81,15 @@ struct ReviewAPIClient: APIClient {
             query: ["reviewIds": reviewIds]
         )
     }
+
+    /// POST /v1/reviews/report 리뷰 신고
+    func reportReview(reviewId: Int, description: String) async throws -> String {
+        try await request(
+            "reviews/report",
+            method: "POST",
+            body: ReviewReportRequest(reviewId: reviewId, description: description)
+        )
+    }
 }
 
 //MARK: 회원 API
@@ -147,6 +156,15 @@ struct CommentAPIClient: APIClient {
         try await request("comments",
                           method: "POST",
                           body: ["boardId":boardId, "comment":comment])
+    }
+
+    /// POST /v1/comments/report 댓글 신고
+    func reportComment(commentId: Int, description: String) async throws -> String {
+        try await request(
+            "comments/report",
+            method: "POST",
+            body: CommentReportRequest(commentId: commentId, description: description)
+        )
     }
 }
 
@@ -257,6 +275,15 @@ struct BoardAPIClient: APIClient {
         try await request("boards/\(boardId)",
                           method: "DELETE")
     }
+
+    /// POST /v1/boards/report 게시글 신고
+    func reportBoard(boardId: Int, description: String) async throws -> String {
+        try await request(
+            "boards/report",
+            method: "POST",
+            body: BoardReportRequest(boardId: boardId, description: description)
+        )
+    }
 }
 
 //MARK: 유저 API
@@ -281,27 +308,19 @@ struct UserAPIClient: APIClient {
         return try await loginWithKakao(accessToken: accessToken)
     }
 
-    /// 네이버 로그인: 백엔드 authorization URL을 열고 return-url result를 받아 앱 세션으로 변환
+    /// 네이버 로그인: 백엔드 authorization URL 완료 후 refresh-token 쿠키로 앱 세션을 부트스트랩
     func loginWithNaverAsync() async throws -> AuthResponse {
         let result = try await NaverSignInManager.shared.signInWithNaverAsync()
-        switch result.outcome {
-        case .success:
-            return AuthResponse(
-                accessToken: naverPlaceholderAccessToken,
-                refreshToken: nil,
-                memberId: nil,
-                role: nil,
-                isNewUser: false
-            )
-        case .signup, .emptyNickname:
-            return AuthResponse(
-                accessToken: naverPlaceholderAccessToken,
-                refreshToken: nil,
-                memberId: nil,
-                role: nil,
-                isNewUser: true
-            )
-        }
+        let refreshToken = try requireRefreshTokenFromCookieStorage(for: result.outcome)
+        let session = try await bootstrapSessionWithRefreshToken(refreshToken)
+
+        return AuthResponse(
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+            memberId: session.memberId,
+            role: session.role,
+            isNewUser: result.outcome != .success || session.isNewUser
+        )
     }
 
     /// 애플 로그인 전체 플로우: Apple 인증 + 서버 로그인
@@ -385,12 +404,45 @@ struct UserAPIClient: APIClient {
     }
 }
 
+private extension UserAPIClient {
+    func requireRefreshTokenFromCookieStorage(for outcome: NaverSignInResult.Outcome) throws -> String {
+        if let refreshToken = refreshTokenFromCookieStorage(), !refreshToken.isEmpty {
+            return refreshToken
+        }
+
+        throw NSError(
+            domain: "NaverLogin",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: missingRefreshTokenMessage(for: outcome)]
+        )
+    }
+
+    func missingRefreshTokenMessage(for outcome: NaverSignInResult.Outcome) -> String {
+        switch outcome {
+        case .success:
+            return "네이버 로그인은 완료됐지만 refresh token 쿠키를 확인하지 못했어요. 서버 쿠키 설정을 확인해주세요."
+        case .signup, .emptyNickname:
+            return "네이버 가입 상태는 확인됐지만 refresh token 쿠키를 확인하지 못했어요. 신규 유저도 reissue용 refresh token이 필요해요."
+        }
+    }
+}
+
 private struct KakaoUserIDResponse: Decodable {
     let id: Int64
 }
 
-private extension UserAPIClient {
-    var naverPlaceholderAccessToken: String {
-        "naver-oauth-session"
-    }
+// MARK: - 신고 Request 모델
+struct BoardReportRequest: Encodable {
+    let boardId: Int
+    let description: String
+}
+
+struct CommentReportRequest: Encodable {
+    let commentId: Int
+    let description: String
+}
+
+struct ReviewReportRequest: Encodable {
+    let reviewId: Int
+    let description: String
 }
