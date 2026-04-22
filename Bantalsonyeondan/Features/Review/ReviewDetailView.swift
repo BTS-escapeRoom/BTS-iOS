@@ -78,6 +78,8 @@ struct ReviewDetailView: View {
 
 private struct ReviewRowView: View {
     let review: Review
+    @State private var isShowingReportSheet = false
+    @State private var reportDescription = ""
     
     // 날짜 포맷 변환 함수
     func formattedDate(_ dateString: String?) -> String {
@@ -124,6 +126,19 @@ private struct ReviewRowView: View {
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
+                // 내 리뷰가 아닐 때만 신고 버튼
+                if review.isMyReview != true {
+                    Button {
+                        reportDescription = ""
+                        isShowingReportSheet = true
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .rotationEffect(.degrees(90))
+                            .foregroundStyle(Color(UIColor.systemGray))
+                            .padding(.horizontal, 4)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             // 주요 정보
             VStack(alignment: .leading, spacing: 4) {
@@ -167,6 +182,18 @@ private struct ReviewRowView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.osloGray.opacity(0.05))
                     )
+            }
+        }
+        .sheet(isPresented: $isShowingReportSheet) {
+            ReportSheet(description: $reportDescription, title: "리뷰 신고") {
+                let reviewId = review.id
+                Task {
+                    _ = try? await ReviewAPIClient.live.reportReview(
+                        reviewId: reviewId,
+                        description: reportDescription
+                    )
+                }
+                isShowingReportSheet = false
             }
         }
     }
