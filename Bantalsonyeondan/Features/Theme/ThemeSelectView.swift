@@ -27,7 +27,7 @@ struct ThemeSelectView: View {
                         get: \.searchText,
                         send: ThemeFeature.Action.onSearchTextChanged
                     ),
-                    placeholder: "테마명, 지역명 검색"
+                    placeholder: "원하는 지역 또는 테마 검색"
                 )
                 .padding(.horizontal)
                 .padding(.top, 8)
