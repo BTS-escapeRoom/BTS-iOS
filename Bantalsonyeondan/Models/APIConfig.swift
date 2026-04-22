@@ -10,17 +10,16 @@ import Foundation
 struct APIConfig {
     static let baseURL = URL(string: "https://apis.bangtal-boys.com/v1/")!
     static let reissueURL = baseURL
-        .deletingLastPathComponent()
         .appendingPathComponent("reissue")
-    static let debugFallbackBearerToken = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzLXRva2VuIiwiaWQiOjEsInVzZXJuYW1lIjoi6rSA66as7J6QIiwicm9sZSI6IlJPTEVfQURNSU4iLCJpYXQiOjE3MzYyMjgzMDUsImV4cCI6ODA2MzAyMjgzMDV9.SkiUghz1aukqU2UNpUEON-N5mrQs73I1NuaoifjL0DI"
 
     static var bearerToken: String? {
-        if let accessToken = AuthSessionStore.currentSession?.accessToken
+        guard let accessToken = AuthSessionStore.currentSession?.accessToken
+            .replacingOccurrences(of: "Bearer ", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines),
-           !accessToken.isEmpty {
-            return "Bearer \(accessToken)"
+              !accessToken.isEmpty else {
+            return nil
         }
-        return debugFallbackBearerToken
+        return "Bearer \(accessToken)"
     }
 }
 
