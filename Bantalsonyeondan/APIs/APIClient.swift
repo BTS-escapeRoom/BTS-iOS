@@ -6,9 +6,6 @@
 //
 
 import Foundation
-import KakaoSDKUser
-import KakaoSDKAuth
-import KakaoSDKCommon
 import AuthenticationServices
 
 //MARK: APIClient
@@ -283,22 +280,32 @@ struct BoardAPIClient: APIClient {
 struct UserAPIClient: APIClient {
     /// 카카오톡 로그인
     func loginWithKakaoTalkAsync() async throws -> AuthResponse {
-        do {
-            let accessToken = try await UserApi.shared.loginWithKakaoTalkAsync()
-            return try await loginWithKakao(accessToken: accessToken)
-        } catch {
-            guard shouldFallbackToKakaoAccount(error) else {
-                throw error
-            }
-            let accessToken = try await UserApi.shared.loginWithKakaoAccountAsync()
-            return try await loginWithKakao(accessToken: accessToken)
-        }
+        let result = try await KakaoSignInManager.shared.loginAsync()
+        return try await login(
+            provider: "kakao",
+            body: AppSocialLoginRequest(
+                code: nil,
+                accessToken: result.accessToken,
+                id: result.userId,
+                state: nil,
+                nonce: nil
+            )
+        )
     }
 
     /// 카카오 계정 로그인
     func loginWithKakaoAccountAsync() async throws -> AuthResponse {
-        let accessToken = try await UserApi.shared.loginWithKakaoAccountAsync()
-        return try await loginWithKakao(accessToken: accessToken)
+        let result = try await KakaoSignInManager.shared.loginWithAccountAsync()
+        return try await login(
+            provider: "kakao",
+            body: AppSocialLoginRequest(
+                code: nil,
+                accessToken: result.accessToken,
+                id: result.userId,
+                state: nil,
+                nonce: nil
+            )
+        )
     }
 
     /// 네이버 로그인: SDK로 accessToken 취득 후 서버에 전달
@@ -341,59 +348,6 @@ struct UserAPIClient: APIClient {
 
     private func login(provider: String, body: AppSocialLoginRequest) async throws -> AuthResponse {
         try await request("auth/login/\(provider)", method: "POST", body: body)
-    }
-
-    private func loginWithKakao(accessToken: String) async throws -> AuthResponse {
-        // fetch kakao user id using the access token
-        let userId = try await fetchCurrentKakaoUserId(accessToken: accessToken)
-        // The backend expects either an authorization code or an access token. When the client
-        // already obtained an access token via the Kakao SDK, send only the access token payload
-        // and omit `code` entirely so the backend does not treat an empty string as a real code.
-        return try await login(
-            provider: "kakao",
-            body: AppSocialLoginRequest(
-                code: nil,
-                accessToken: accessToken,
-                id: userId,
-                state: nil,
-                nonce: nil
-            )
-        )
-    }
-
-    private func shouldFallbackToKakaoAccount(_ error: Error) -> Bool {
-        guard let sdkError = error as? SdkError else {
-            return false
-        }
-        if case let .ClientFailed(reason, _) = sdkError {
-            return reason == .TokenNotFound || reason == .NotSupported
-        }
-        return false
-    }
-
-    private func fetchCurrentKakaoUserId(accessToken: String) async throws -> Int64 {
-        guard let url = URL(string: "https://kapi.kakao.com/v2/user/me") else {
-            throw URLError(.badURL)
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
-        guard 200..<300 ~= httpResponse.statusCode else {
-            let responseText = String(data: data, encoding: .utf8) ?? "No response body"
-            throw URLError(
-                .badServerResponse,
-                userInfo: [NSLocalizedDescriptionKey: "Kakao user info failed: \(httpResponse.statusCode), \(responseText)"]
-            )
-        }
-
-        let me = try JSONDecoder().decode(KakaoUserIDResponse.self, from: data)
-        return me.id
     }
 }
 
