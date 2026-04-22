@@ -35,7 +35,12 @@ final class KakaoSignInManager {
 
     // MARK: - 로그아웃
     func logoutAsync() async throws {
-        try await UserApi.shared.logoutAsync()
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            UserApi.shared.logout { error in
+                if let error { cont.resume(throwing: error) }
+                else { cont.resume() }
+            }
+        }
     }
 
     // MARK: - 카카오 userId 조회
