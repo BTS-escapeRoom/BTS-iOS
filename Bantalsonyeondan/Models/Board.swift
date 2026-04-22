@@ -42,7 +42,7 @@ struct BoardDetail: Decodable, Equatable {
     let id: Int
     let type: String
     let title: String
-    let description: String
+    let description: String?
     let memberId: Int?
     let memberName: String
     let profileImg: String?
