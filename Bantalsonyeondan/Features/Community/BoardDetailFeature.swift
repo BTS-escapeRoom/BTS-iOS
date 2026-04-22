@@ -44,6 +44,7 @@ struct BoardDetailFeature: Reducer {
         case tapDeleteBoard
         case deleteBoardResponse(Result<String, Error>)
         case clearToastMessage
+        case clearErrorMessage
         case clearDismissRequest
         case clearMutationFlag
         case refresh
@@ -204,7 +205,7 @@ struct BoardDetailFeature: Reducer {
             case let .failure(error):
                 state.isLiked = previousIsLiked
                 state.likeCount = previousLikeCount
-                state.toastMessage = error.localizedDescription
+                state.errorMessage = error.localizedDescription
             }
             return .none
 
@@ -212,7 +213,7 @@ struct BoardDetailFeature: Reducer {
             guard state.isMine else { return .none }
             guard !state.isUpdatingBoardAction else { return .none }
             guard !state.isRecruitClosed else {
-                state.toastMessage = "이미 마감된 모집글이에요."
+                state.errorMessage = "이미 마감된 모집글이에요."
                 return .none
             }
             state.isUpdatingBoardAction = true
@@ -234,7 +235,7 @@ struct BoardDetailFeature: Reducer {
                 state.toastMessage = "모집을 마감했어요."
                 state.didMutateBoard = true
             case let .failure(error):
-                state.toastMessage = error.localizedDescription
+                state.errorMessage = error.localizedDescription
             }
             return .none
 
@@ -260,12 +261,16 @@ struct BoardDetailFeature: Reducer {
                 state.didMutateBoard = true
                 state.shouldDismiss = true
             case let .failure(error):
-                state.toastMessage = error.localizedDescription
+                state.errorMessage = error.localizedDescription
             }
             return .none
 
         case .clearToastMessage:
             state.toastMessage = nil
+            return .none
+
+        case .clearErrorMessage:
+            state.errorMessage = nil
             return .none
 
         case .clearDismissRequest:
