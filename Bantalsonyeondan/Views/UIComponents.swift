@@ -162,23 +162,37 @@ enum AppToastStyle {
 
     var foreground: Color {
         switch self {
-        case .info:
-            return .white
-        case .success:
-            return .white
-        case .error:
-            return .white
+        case .info: return .white
+        case .success: return .white
+        case .error: return Color(red: 0.2, green: 0.1, blue: 0)
         }
     }
 
     var background: Color {
         switch self {
-        case .info:
-            return Color.black.opacity(0.85)
-        case .success:
-            return Color.green.opacity(0.9)
-        case .error:
-            return Color.red.opacity(0.9)
+        case .info: return Color.black.opacity(0.85)
+        case .success: return Color(red: 0.18, green: 0.72, blue: 0.42)
+        case .error: return Color(red: 1.0, green: 0.78, blue: 0.1)
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .info: return "info.circle.fill"
+        case .success: return "checkmark.circle.fill"
+        case .error: return "exclamationmark.triangle.fill"
+        }
+    }
+
+    var isBottom: Bool { true }
+
+    var cornerRadius: CGFloat { 12 }
+
+    var borderColor: Color {
+        switch self {
+        case .info: return Color.gray
+        case .success: return Color(red: 0.1, green: 0.55, blue: 0.3)
+        case .error: return Color(red: 0.75, green: 0.55, blue: 0.0)
         }
     }
 }
@@ -195,20 +209,38 @@ private struct AppToastModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .overlay(alignment: .top) {
+            .overlay(alignment: .bottom) {
                 if let visibleMessage, isShowing {
-                    Text(visibleMessage)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(style.foreground)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(style.background)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .padding(.top, 12)
-                        .padding(.horizontal, 16)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                        .zIndex(1000)
+                    HStack(spacing: 10) {
+                        Image(systemName: style.icon)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(style.foreground)
+                        Text(visibleMessage)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(style.foreground)
+                            .multilineTextAlignment(.leading)
+                        Spacer()
+                        Button {
+                            withAnimation { isShowing = false }
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(style.foreground)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(style.background)
+                    .clipShape(RoundedRectangle(cornerRadius: style.cornerRadius))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: style.cornerRadius)
+                            .stroke(style.borderColor, lineWidth: 1.5)
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .zIndex(1000)
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: isShowing)
