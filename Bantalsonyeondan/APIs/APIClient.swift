@@ -108,15 +108,8 @@ struct MemberAPIClient: APIClient {
 
     /// DELETE /v1/members 회원 탈퇴
     func deleteMember(naverAccessToken: String? = nil) async throws {
-        let trimmedNaverToken = naverAccessToken?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let headers: [String: String]
-        if trimmedNaverToken.isEmpty {
-            headers = [:]
-        } else {
-            headers = ["naverAccessToken": trimmedNaverToken]
-        }
-
+        let trimmedToken = naverAccessToken?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let headers: [String: String] = trimmedToken.isEmpty ? [:] : ["naverAccessToken": trimmedToken]
         let _: EmptyResponseObject = try await request(
             "members",
             method: "DELETE",
@@ -308,18 +301,18 @@ struct UserAPIClient: APIClient {
         return try await loginWithKakao(accessToken: accessToken)
     }
 
-    /// 네이버 로그인: 백엔드 authorization URL 완료 후 refresh-token 쿠키로 앱 세션을 부트스트랩
+    /// 네이버 로그인: SDK로 accessToken 취득 후 서버에 전달
     func loginWithNaverAsync() async throws -> AuthResponse {
-        let result = try await NaverSignInManager.shared.signInWithNaverAsync()
-        let refreshToken = try requireRefreshTokenFromCookieStorage(for: result.outcome)
-        let session = try await bootstrapSessionWithRefreshToken(refreshToken)
-
-        return AuthResponse(
-            accessToken: session.accessToken,
-            refreshToken: session.refreshToken,
-            memberId: session.memberId,
-            role: session.role,
-            isNewUser: result.outcome != .success || session.isNewUser
+        let accessToken = try await NaverSignInManager.shared.loginAsync()
+        return try await login(
+            provider: "naver",
+            body: AppSocialLoginRequest(
+                code: nil,
+                accessToken: accessToken,
+                id: nil,
+                state: nil,
+                nonce: nil
+            )
         )
     }
 
@@ -405,26 +398,6 @@ struct UserAPIClient: APIClient {
 }
 
 private extension UserAPIClient {
-    func requireRefreshTokenFromCookieStorage(for outcome: NaverSignInResult.Outcome) throws -> String {
-        if let refreshToken = refreshTokenFromCookieStorage(), !refreshToken.isEmpty {
-            return refreshToken
-        }
-
-        throw NSError(
-            domain: "NaverLogin",
-            code: -1,
-            userInfo: [NSLocalizedDescriptionKey: missingRefreshTokenMessage(for: outcome)]
-        )
-    }
-
-    func missingRefreshTokenMessage(for outcome: NaverSignInResult.Outcome) -> String {
-        switch outcome {
-        case .success:
-            return "네이버 로그인은 완료됐지만 refresh token 쿠키를 확인하지 못했어요. 서버 쿠키 설정을 확인해주세요."
-        case .signup, .emptyNickname:
-            return "네이버 가입 상태는 확인됐지만 refresh token 쿠키를 확인하지 못했어요. 신규 유저도 reissue용 refresh token이 필요해요."
-        }
-    }
 }
 
 private struct KakaoUserIDResponse: Decodable {
