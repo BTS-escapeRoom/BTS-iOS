@@ -447,7 +447,14 @@ struct BoardDetailView: View {
                     get: { viewStore.toastMessage },
                     set: { _ in viewStore.send(.clearToastMessage) }
                 ),
-                style: .info
+                style: .success
+            )
+            .appToast(
+                message: Binding(
+                    get: { viewStore.errorMessage },
+                    set: { _ in viewStore.send(.clearErrorMessage) }
+                ),
+                style: .error
             )
             .onChange(of: viewStore.didMutateBoard) { mutated in
                 guard mutated else { return }
