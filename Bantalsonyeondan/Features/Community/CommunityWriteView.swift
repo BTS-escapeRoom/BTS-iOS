@@ -79,7 +79,7 @@ struct CommunityWriteView: View {
         _title = State(initialValue: resolvedTitle)
         _recruitCount = State(initialValue: resolvedRecruitCount)
         _escapeDate = State(initialValue: CommunityWriteView.parseISODate(resolvedEscapeDateString))
-        _isDateUndecided = State(initialValue: resolvedEscapeDateString == nil)
+        _isDateUndecided = State(initialValue: editingBoard != nil && resolvedEscapeDateString == nil)
         _contactMethodType = State(initialValue: CommunityWriteView.resolveContactMethod(from: resolvedContactMethodRaw))
         _contactUrl = State(initialValue: resolvedContactUrl)
         _deadline = State(initialValue: CommunityWriteView.parseISODate(resolvedDeadlineString))
@@ -93,15 +93,15 @@ struct CommunityWriteView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     // Title
                     TextField("제목을 입력해주세요.", text: $title)
-                        .font(.headline)
+                        .font(.title3)
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(.clear)
                         .cornerRadius(8)
 
                     // Recruit Count
                     HStack {
                         Text("모집 인원")
-                            .padding(.trailing, 8)
+                            .padding(.trailing, 16)
                         TextField("0", text: $recruitCount)
                             .keyboardType(.numberPad)
                             .frame(width: 50)
@@ -111,12 +111,29 @@ struct CommunityWriteView: View {
                     }
 
                     // Escape Date
-                    HStack(alignment: .top) {
-                        Text("탈출 일자")
-                        VStack(alignment: .leading) {
-                            DatePicker("", selection: Binding($escapeDate, replacingNilWith: Date()), displayedComponents: .date)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 10) {
+                            Text("탈출 일자")
+                            
+                            if !isDateUndecided {
+                                DatePicker(
+                                    "",
+                                    selection: Binding($escapeDate, replacingNilWith: Date()),
+                                    displayedComponents: .date
+                                )
                                 .labelsHidden()
-                            Toggle("협의 후 결정하기", isOn: $isDateUndecided)
+                                .datePickerStyle(.compact)
+                            }
+                            
+                            Button("협의 후 결정") {
+                                isDateUndecided.toggle()
+                            }
+                            .font(.caption)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(isDateUndecided ? Color.black : Color(.systemGray6))
+                            .foregroundColor(isDateUndecided ? .white : .black)
+                            .cornerRadius(8)
                         }
                     }
 
@@ -153,15 +170,15 @@ struct CommunityWriteView: View {
                         Text("테마 정보")
                             .font(.system(size: 18, weight: .semibold))
 
-                        if shouldAllowThemeSelection {
+                        if shouldAllowThemeSelection && selectedTheme == nil {
                             Button(action: { showThemeSelectView = true }) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color(.systemGray6))
-                                        .frame(height: 52)
+                                        .fill(Color("FAFAFA"))
+                                        .frame(height: 60)
 
                                     Text(selectedTheme == nil ? "테마 연결하기" : "다른 테마 선택")
-                                        .font(.system(size: 18, weight: .medium))
+                                        .font(.system(size: 14, weight: .medium))
                                         .foregroundColor(Color(.systemGray))
                                         .underline(selectedTheme == nil)
 
@@ -177,12 +194,12 @@ struct CommunityWriteView: View {
                         }
 
                         if let theme = selectedTheme {
-                            ThemeInfoCard(theme: theme)
+                            ThemeInfoCard(theme: theme, onChangeTap: shouldAllowThemeSelection ? { showThemeSelectView = true } : nil)
                         }
                     }
 
                     // Deadline
-                    HStack(alignment: .top) {
+                    HStack(alignment: .center) {
                         Text("모집 마감일")
                         DatePicker("", selection: Binding($deadline, replacingNilWith: Date()), displayedComponents: .date)
                             .labelsHidden()
@@ -191,12 +208,22 @@ struct CommunityWriteView: View {
                     // Content
                     VStack(alignment: .leading) {
                         Text("모집 내용")
-                        TextEditor(text: $content)
-                            .frame(height: 150)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray, lineWidth: 1)
-                            )
+                        ZStack(alignment: .topLeading) {
+                            TextEditor(text: $content)
+                                .frame(height: 150)
+                            if content.isEmpty {
+                                Text("모집 내용을 입력해주세요.")
+                                    .foregroundColor(Color(.placeholderText))
+                                    .padding(.top, 8)
+                                    .padding(.leading, 5)
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                        .frame(height: 150)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray, lineWidth: 1)
+                        )
                     }
 
                     // Submit Button
@@ -326,8 +353,10 @@ extension Binding where Value: Equatable {
 
 struct ThemeInfoCard: View {
     let theme: Theme
+    var onChangeTap: (() -> Void)? = nil
+
     var body: some View {
-        let difficulty = theme.difficulty
+        let difficulty = theme.difficulty ?? 0.0
         HStack(alignment: .top, spacing: 12) {
             CachedAsyncImage(url: URL(string: theme.thumbnail)) { phase in
                 switch phase {
@@ -347,26 +376,69 @@ struct ThemeInfoCard: View {
             }
             .frame(width: 72, height: 72)
             .cornerRadius(10)
+            .clipped()
+
             VStack(alignment: .leading, spacing: 4) {
-                Text(theme.title)
-                    .font(.headline)
-                if let genrePresentation = theme.genrePresentation {
-                    ThemeGenreBadge(presentation: genrePresentation)
+                // 제목 + 변경 버튼
+                HStack {
+                    Text(theme.title)
+                        .font(.headline)
+                        .lineLimit(1)
+                    Spacer()
+                    if let onChangeTap {
+                        Button("변경", action: onChangeTap)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
                 }
-                ThemeDifficultyView(difficulty: difficulty ?? 0.0)
-                HStack(spacing: 8) {
-                    Text("플레이타임: \(theme.time ?? 0)분")
+
+                // 장르 배지 + 난이도 + 플레이타임
+                HStack(spacing: 6) {
+                    if let genrePresentation = theme.genrePresentation {
+                        ThemeGenreBadge(presentation: genrePresentation)
+                    }
+                    HStack {
+                        ThemeDifficultyView(difficulty: difficulty)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .cornerRadius(4)
+                        Text(String(format: "%.1f", difficulty))
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
+                    .background(Color("EEEEEE"))
+                    .cornerRadius(4)
+                    
+                    if let time = theme.time {
+                        HStack(spacing: 3) {
+                            Image(systemName: "clock")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                            Text("\(time)분")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.vertical, 1)
+                        .padding(.horizontal, 6)
+                        .background(Color("EEEEEE"))
+                        .cornerRadius(4)
+                    }
+                }
+
+                // 지역
+                let location = [theme.city, theme.district, theme.store]
+                    .filter { !$0.isEmpty }
+                    .joined(separator: " ")
+                if !location.isEmpty {
+                    Text(location)
                         .font(.caption2)
                         .foregroundColor(.gray)
-                    Text(theme.store)
-                        .font(.caption2)
-                        .foregroundColor(.gray)
+                        .lineLimit(1)
                 }
             }
-            Spacer()
         }
-        .padding(8)
-        .background(Color(.systemGray6))
+        .padding(10)
+        .background(Color("FAFAFA"))
         .cornerRadius(12)
     }
 }
@@ -374,16 +446,18 @@ struct ThemeInfoCard: View {
 struct ThemeDifficultyView: View {
     let difficulty: Double
     var body: some View {
+        let full = Int(difficulty)
+        let hasHalf = (difficulty - Double(full)) >= 0.5
         HStack(spacing: 2) {
-            ForEach(0..<5, id: \.self) { i in
-                let leftFilled = difficulty >= Double(i) + 0.5
-                let rightFilled = difficulty >= Double(i) + 1.0
-                Image(leftFilled ? "icon_locker_left_filled" : "icon_locker_left")
+            ForEach(0..<full, id: \.self) { _ in
+                Image("icon_locker_black")
                     .resizable()
-                    .frame(width: 12, height: 16)
-                Image(rightFilled ? "icon_locker_right_filled" : "icon_locker_right")
+                    .frame(width: 8, height: 10)
+            }
+            if hasHalf {
+                Image("icon_locker_left_black")
                     .resizable()
-                    .frame(width: 12, height: 16)
+                    .frame(width: 4, height: 10)
             }
         }
     }
