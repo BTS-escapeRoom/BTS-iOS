@@ -171,7 +171,11 @@ struct MyFeature: Reducer {
 
             case .withdrawAccountResponse(.success):
                 state.isDeletingAccount = false
-                return .send(.delegate(.logoutRequested))
+                return .run { send in
+                    // 네이버 SDK 캐시 토큰 초기화 (재로그인 시 invalid_request 방지)
+                    await NaverSignInManager.resetToken()
+                    await send(.delegate(.logoutRequested))
+                }
 
             case let .withdrawAccountResponse(.failure(error)):
                 state.isDeletingAccount = false
