@@ -107,13 +107,36 @@ struct ThemeRowView: View {
             }
             .frame(width: 56, height: 56)
             .cornerRadius(8)
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(theme.title)
                     .font(.body)
                     .foregroundColor(.black)
-                HStack(spacing: 4) {
+                // 장르 배지 + 난이도 + 시간
+                HStack(spacing: 6) {
                     if let genrePresentation = theme.genrePresentation {
                         ThemeGenreBadge(presentation: genrePresentation)
+                    }
+                    if let difficulty = theme.difficulty {
+                        HStack(spacing: 2) {
+                            ThemeDifficultyView(difficulty: difficulty)
+                        }
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color("EEEEEE"))
+                        .cornerRadius(4)
+                    }
+                    if let time = theme.time, time > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 9))
+                            Text("\(time)분")
+                                .font(.caption2)
+                        }
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color("EEEEEE"))
+                        .cornerRadius(4)
                     }
                 }
                 Text(theme.store)
@@ -122,13 +145,19 @@ struct ThemeRowView: View {
             }
             Spacer()
             if isSelected {
-                Text("선택됨")
-                    .font(.caption)
-                    .foregroundColor(Color.accentColor)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.black)
                     .padding(.trailing, 8)
             }
         }
         .padding(.vertical, 12)
-        .background(isSelected ? Color.gray.opacity(0.08) : Color.clear)
+        .padding(.horizontal, 8)
+        .background(isSelected ? Color.gray.opacity(0.06) : Color.clear)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isSelected ? Color.black : Color.clear, lineWidth: 2)
+        )
+        .contentShape(Rectangle())
     }
 }
