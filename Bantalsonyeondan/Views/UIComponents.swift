@@ -161,11 +161,7 @@ enum AppToastStyle {
     case error
 
     var foreground: Color {
-        switch self {
-        case .info: return .white
-        case .success: return .white
-        case .error: return Color(red: 0.2, green: 0.1, blue: 0)
-        }
+        return .black
     }
 
     var background: Color {
@@ -186,7 +182,7 @@ enum AppToastStyle {
 
     var isBottom: Bool { true }
 
-    var cornerRadius: CGFloat { 12 }
+    var cornerRadius: CGFloat { 0 }
 
     var borderColor: Color {
         switch self {
@@ -212,9 +208,15 @@ private struct AppToastModifier: ViewModifier {
             .overlay(alignment: .bottom) {
                 if let visibleMessage, isShowing {
                     HStack(spacing: 10) {
-                        Image(systemName: style.icon)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(style.foreground)
+                        // 원형 구멍 효과 아이콘
+                        ZStack {
+                            Circle()
+                                .fill(style.foreground)
+                                .frame(width: 28, height: 28)
+                            Image(systemName: style.icon)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(style.background)
+                        }
                         Text(visibleMessage)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(style.foreground)
