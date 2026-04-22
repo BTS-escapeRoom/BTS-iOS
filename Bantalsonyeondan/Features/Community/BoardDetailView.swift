@@ -8,6 +8,10 @@ struct BoardDetailView: View {
     @State private var isShowingOwnerMenu: Bool = false
     @State private var isShowingEditView: Bool = false
     @State private var memberHistoryTarget: MemberHistoryTarget? = nil
+    @State private var isShowingReportSheet: Bool = false
+    @State private var isShowingCommentReportSheet: Bool = false
+    @State private var reportTargetCommentId: Int? = nil
+    @State private var reportDescription: String = ""
 
     init(
         store: StoreOf<BoardDetailFeature>,
@@ -191,6 +195,18 @@ struct BoardDetailView: View {
                                     .padding(.vertical, 4)
                             }
                             .buttonStyle(.plain)
+                        } else {
+                            Button {
+                                reportDescription = ""
+                                isShowingReportSheet = true
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .rotationEffect(.degrees(90))
+                                    .foregroundStyle(Color(UIColor.systemGray))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
 
@@ -311,6 +327,22 @@ struct BoardDetailView: View {
                                             .foregroundColor(.secondary)
                                     }
                                     Spacer()
+                                    // 내 댓글이 아닐 때만 신고 버튼
+                                    let isMyComment = comment.memberId == AuthSessionStore.currentSession?.memberId
+                                    if !isMyComment {
+                                        Button {
+                                            reportTargetCommentId = comment.id
+                                            reportDescription = ""
+                                            isShowingCommentReportSheet = true
+                                        } label: {
+                                            Image(systemName: "ellipsis")
+                                                .rotationEffect(.degrees(90))
+                                                .foregroundStyle(Color(UIColor.systemGray))
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
                                 }
                                 Text(comment.comment)
                                     .font(.body)
@@ -433,6 +465,22 @@ struct BoardDetailView: View {
                 )
                 .presentationDetents([.fraction(0.85)])
                 .presentationDragIndicator(.visible)
+            }
+            // 게시글 신고 시트
+            .sheet(isPresented: $isShowingReportSheet) {
+                ReportSheet(description: $reportDescription, title: "게시글 신고") {
+                    viewStore.send(.tapReportBoard(description: reportDescription))
+                    isShowingReportSheet = false
+                }
+            }
+            // 댓글 신고 시트
+            .sheet(isPresented: $isShowingCommentReportSheet) {
+                ReportSheet(description: $reportDescription, title: "댓글 신고") {
+                    if let cid = reportTargetCommentId {
+                        viewStore.send(.tapReportComment(commentId: cid, description: reportDescription))
+                    }
+                    isShowingCommentReportSheet = false
+                }
             }
             .overlay {
                 if viewStore.isUpdatingBoardAction {
