@@ -55,6 +55,7 @@
 		517F60FE2F32581F00A3880C /* Galmuri9.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 517F60FD2F32581F00A3880C /* Galmuri9.ttf */; };
 		518390062E5F36D20083B7F9 /* CommunityWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 518390052E5F36D20083B7F9 /* CommunityWriteView.swift */; };
 		51A0CBD22EE0606600BC8E73 /* AppleSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0CBD12EE0606600BC8E73 /* AppleSignInManager.swift */; };
+		E3EC5FD6021749BE901C08A4 /* NaverSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5A736297FD4AC4A8539CA5 /* NaverSignInManager.swift */; };
 		51A0DAD42F3254E70009F19C /* RecordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0DAD32F3254E70009F19C /* RecordsView.swift */; };
 		51A4EECC2E27D27B0065D460 /* ReviewWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A4EECB2E27D27B0065D460 /* ReviewWriteView.swift */; };
 		51B64E0C2E68724B00696BDF /* ThemeSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B64E0B2E68724B00696BDF /* ThemeSelectView.swift */; };
@@ -141,6 +142,7 @@
 		518390052E5F36D20083B7F9 /* CommunityWriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityWriteView.swift; sourceTree = "<group>"; };
 		5190FA062EB24629006A0BD1 /* BantalsonyeondanDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BantalsonyeondanDebug.entitlements; sourceTree = "<group>"; };
 		51A0CBD12EE0606600BC8E73 /* AppleSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInManager.swift; sourceTree = "<group>"; };
+		7B5A736297FD4AC4A8539CA5 /* NaverSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaverSignInManager.swift; sourceTree = "<group>"; };
 		51A0DAD32F3254E70009F19C /* RecordsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordsView.swift; sourceTree = "<group>"; };
 		51A4EECB2E27D27B0065D460 /* ReviewWriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewWriteView.swift; sourceTree = "<group>"; };
 		51B64E0B2E68724B00696BDF /* ThemeSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSelectView.swift; sourceTree = "<group>"; };
@@ -358,6 +360,7 @@
 			children = (
 				517F13F12CD128A90061F8A7 /* LoginFeature.swift */,
 				51A0CBD12EE0606600BC8E73 /* AppleSignInManager.swift */,
+				7B5A736297FD4AC4A8539CA5 /* NaverSignInManager.swift */,
 				51619C962D787D8E00E8E866 /* TestAPI */,
 				51C00D032E1E91F0006CCA3C /* Review */,
 				516086AA2D37E3E50094EAC9 /* Home */,
@@ -557,6 +560,7 @@
 				51DF46B32DE733CC00FA49EB /* LocationManager.swift in Sources */,
 				51619C952D6601AB00E8E866 /* APIConfig.swift in Sources */,
 				51A0CBD22EE0606600BC8E73 /* AppleSignInManager.swift in Sources */,
+				E3EC5FD6021749BE901C08A4 /* NaverSignInManager.swift in Sources */,
 				518390062E5F36D20083B7F9 /* CommunityWriteView.swift in Sources */,
 				515292002F8FE1600018DBCB /* MemberHistoryView.swift in Sources */,
 				51619C912D618F3100E8E866 /* StoreInfo.swift in Sources */,
