@@ -14,12 +14,7 @@ struct AppView: View {
         case myPage
 
         var message: String {
-            switch self {
-            case .community:
-                return "이 공간은 로그인 후 열람할 수 있어요.\n지금 로그인하고 함께 둘러볼까요?"
-            case .myPage:
-                return "이 공간은 로그인 후 열람할 수 있어요.\n지금 로그인하고 함께 둘러볼까요?"
-            }
+            return "이 공간은 로그인 후 열람할 수 있어요.\n지금 로그인하고 함께 둘러볼까요?🔑"
         }
     }
 
@@ -198,7 +193,7 @@ struct AppView: View {
                 isAuthenticated: viewStore.isAuthenticated,
                 onRequireLogin: {
                     pendingTabAfterLogin = nil
-                    isShowingLoginView = true
+                    loginRequiredContext = .community
                 }
             )
         case .community:
@@ -225,7 +220,7 @@ private struct LoginRequiredPopup: View {
 
             VStack(spacing: 12) {
                 ZStack {
-                    Text("로그인이 필요해요")
+                    Text("로그인이 필요해요🚪")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.black)
 
