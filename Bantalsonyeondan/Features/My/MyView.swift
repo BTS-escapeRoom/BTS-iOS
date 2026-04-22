@@ -109,7 +109,8 @@ struct MyView: View {
                             viewStore.send(.updateProfile(nickname: nickname, description: description))
                         },
                         onWithdraw: { naverAccessToken in
-                            viewStore.send(.withdrawAccount(naverAccessToken: naverAccessToken))
+                            let token = naverAccessToken ?? NaverSignInManager.currentAccessToken()
+                            viewStore.send(.withdrawAccount(naverAccessToken: token))
                         }
                     )
                 }

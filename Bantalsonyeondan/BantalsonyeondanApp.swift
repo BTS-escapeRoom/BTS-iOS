@@ -42,6 +42,7 @@ struct MyApp: App {
 
     init() {
         KakaoSDK.initSDK(appKey: "a93ca2d555bc0d7e5195bdfb2c8ecdc1")
+        NaverSignInManager.configure()
     }
 
     var body: some Scene {

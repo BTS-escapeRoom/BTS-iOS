@@ -25,6 +25,8 @@
 	<array>
 		<string>kakaokompassauth</string>
 		<string>naverbangtalsonyeondan</string>
+		<string>naversearchapp</string>
+		<string>naversearchthirdlogin</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
@@ -35,8 +37,6 @@
 	<string>87XRcRkTrKm_jRmKqsVb</string>
 	<key>NaverClientSecret</key>
 	<string>XRsjyrij5R</string>
-	<key>NaverAuthorizeRedirectURI</key>
-	<string>https://apis.bangtal-boys.com/oauth2/authorization/naver</string>
 	<key>NaverRedirectURI</key>
 	<string>naverbangtalsonyeondan://auth</string>
 	<key>UIAppFonts</key>
