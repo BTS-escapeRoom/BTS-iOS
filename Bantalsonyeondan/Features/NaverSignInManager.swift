@@ -44,6 +44,11 @@ final class NaverSignInManager: NSObject {
         return token
     }
 
+    // MARK: - 토큰 초기화 (탈퇴 후 호출)
+    static func resetToken() {
+        NaverThirdPartyLoginConnection.getSharedInstance()?.resetToken()
+    }
+
     // MARK: - 로그인 (accessToken 반환)
     func loginAsync() async throws -> String {
         if continuation != nil {
