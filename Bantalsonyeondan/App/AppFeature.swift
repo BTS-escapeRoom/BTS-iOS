@@ -127,6 +127,10 @@ struct AppFeature: Reducer {
                 }
                 return .none
 
+            case .nicknameSetup(.delegate(.didTapBack)):
+                logout(&state)
+                return .none
+
             case .myPage(.delegate(.logoutRequested)):
                 logout(&state)
                 return .none
