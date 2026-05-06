@@ -15,6 +15,7 @@ struct NicknameSetupFeature: Reducer {
         var didSubmit: Bool = false
         var completedMember: Member? = nil
         var errorMessage: String? = nil
+        var duplicateToastMessage: String? = nil
 
         var trimmedNickname: String {
             nickname.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -34,12 +35,15 @@ struct NicknameSetupFeature: Reducer {
         case submitResponse(Result<Member, Error>)
         case completeTapped
         case clearErrorMessage
+        case dismissDuplicateToast
+        case backTapped
         case delegate(Delegate)
     }
 
     @CasePathable
     enum Delegate {
         case didComplete(Member)
+        case didTapBack
     }
 
     @Dependency(\.memberAPIClient) var memberAPIClient
@@ -89,6 +93,10 @@ struct NicknameSetupFeature: Reducer {
 
         case let .submitResponse(.failure(error)):
             state.isSubmitting = false
+            if error.localizedDescription.contains("Query did not return a unique result") {
+                state.duplicateToastMessage = "이미 사용중인 닉네임입니다."
+                return .none
+            }
             state.errorMessage = error.localizedDescription
             return .none
 
@@ -100,6 +108,13 @@ struct NicknameSetupFeature: Reducer {
             state.errorMessage = nil
             return .none
 
+        case .dismissDuplicateToast:
+            state.duplicateToastMessage = nil
+            return .none
+
+        case .backTapped:
+            return .send(.delegate(.didTapBack))
+
         case .delegate:
             return .none
         }
@@ -108,6 +123,7 @@ struct NicknameSetupFeature: Reducer {
 
 struct NicknameSetupView: View {
     let store: StoreOf<NicknameSetupFeature>
+    @State private var greetingTextWidth: CGFloat = 68
 
     init(
         store: StoreOf<NicknameSetupFeature> = Store(
@@ -130,18 +146,28 @@ struct NicknameSetupView: View {
 
     private func formView(viewStore: ViewStoreOf<NicknameSetupFeature>) -> some View {
         VStack(spacing: 20) {
-            headerTitle("닉네임 설정")
+            headerTitle("닉네임 설정", onBack: { viewStore.send(.backTapped) })
 
             Spacer()
+                .frame(maxHeight: 24)
 
             Image("nickname_setting_lock_hall")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 68, height: 68)
+                .frame(width: 72, height: 72)
+                .shadow(color: Color.green.opacity(0.9), radius: 60, x: 0, y: 0)
+                .shadow(color: Color.green.opacity(0.6), radius: 100, x: 0, y: 0)
 
             VStack(spacing: 8) {
                 Text("반갑습니다!")
                     .font(.system(size: 24, weight: .bold))
+                    .overlay(
+                        GeometryReader { geo in
+                            Color.clear.onAppear {
+                                greetingTextWidth = geo.size.width
+                            }
+                        }
+                    )
                 Text("방탈소년단에서 사용할 닉네임을 설정해 주세요")
                     .font(.system(size: 16, weight: .bold))
                     .multilineTextAlignment(.center)
@@ -226,55 +252,86 @@ struct NicknameSetupView: View {
         } message: {
             Text(viewStore.errorMessage ?? "")
         }
-    }
-
-    private func completedView(viewStore: ViewStoreOf<NicknameSetupFeature>) -> some View {
-        VStack(spacing: 20) {
-            headerTitle("닉네임 설정")
-
-            Spacer()
-
-            Image("nickname_signup_Done")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 150, height: 150)
-
-            Text("축하합니다!")
-                .font(.system(size: 24, weight: .bold))
-
-            Text("\(viewStore.completedMember?.nickname ?? viewStore.nickname)님")
-                .font(.system(size: 20, weight: .bold))
-
-            Text("방탈보이즈와 함께 알찬 방탈출 생활 하세요")
-                .font(.system(size: 16))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-
-            Spacer()
-
-            Button {
-                viewStore.send(.completeTapped)
-            } label: {
-                Text("입장")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(Color("cod_gray"))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+        .appToast(
+            message: viewStore.binding(
+                get: \.duplicateToastMessage,
+                send: { _ in NicknameSetupFeature.Action.dismissDuplicateToast }
+            ),
+            style: .error,
+            duration: 2.5,
+            bottomPadding: 100
+        )
+        .onPreferenceChange(GreetingTextWidthKey.self) { width in
+            if width > 0 { greetingTextWidth = width }
         }
     }
 
-    private func headerTitle(_ title: String) -> some View {
-        HStack {
-            Spacer()
+    private func completedView(viewStore: ViewStoreOf<NicknameSetupFeature>) -> some View {
+        ZStack {
+            Image("nickname_singup_done")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                Image("icon-launch")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 160)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 80)
+
+                Spacer()
+
+                VStack(spacing: 16) {
+                    Text("환영합니다!")
+                        .font(.system(size: 28, weight: .bold))
+
+                    Text("\(viewStore.completedMember?.nickname ?? viewStore.nickname)님")
+                        .font(.system(size: 28, weight: .bold))
+
+                    Text("방탈소년단과 함께 알찬 방탈출 생활 하세요")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+
+                Spacer()
+
+                Button {
+                    viewStore.send(.completeTapped)
+                } label: {
+                    Text("입장")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(Color("cod_gray"))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
+            }
+        }
+    }
+
+    private func headerTitle(_ title: String, onBack: (() -> Void)? = nil) -> some View {
+        ZStack {
             Text(title)
                 .font(.system(size: 20, weight: .bold))
-            Spacer()
+                .frame(maxWidth: .infinity, alignment: .center)
+            if let onBack {
+                HStack {
+                    Button(action: onBack) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(Color(UIColor.systemGray))
+                    }
+                    .padding(.leading, 16)
+                    Spacer()
+                }
+            }
         }
         .padding(.top, 16)
     }
@@ -283,5 +340,12 @@ struct NicknameSetupView: View {
 struct NicknameSetupView_Previews: PreviewProvider {
     static var previews: some View {
         NicknameSetupView()
+    }
+}
+
+private struct GreetingTextWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
