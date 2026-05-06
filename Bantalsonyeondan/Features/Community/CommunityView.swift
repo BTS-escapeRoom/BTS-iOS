@@ -44,6 +44,8 @@ struct CommunityView: View {
                                         .font(.subheadline)
                                         .tint(Color("cod_gray"))
                                     Image("polygon")
+                                        .renderingMode(.template)
+                                        .foregroundStyle(Color(red: 0.467, green: 0.987, blue: 0.924))
                                 }
                             }
                         }
