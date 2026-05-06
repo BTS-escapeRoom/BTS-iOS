@@ -197,6 +197,7 @@ private struct AppToastModifier: ViewModifier {
     @Binding var message: String?
     let style: AppToastStyle
     let duration: TimeInterval
+    let bottomPadding: CGFloat
     let onDismiss: () -> Void
 
     @State private var visibleMessage: String?
@@ -240,7 +241,7 @@ private struct AppToastModifier: ViewModifier {
                     )
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, bottomPadding)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .zIndex(1000)
                 }
@@ -280,6 +281,7 @@ extension View {
         message: Binding<String?>,
         style: AppToastStyle = .error,
         duration: TimeInterval = 2.0,
+        bottomPadding: CGFloat = 16,
         onDismiss: @escaping () -> Void = {}
     ) -> some View {
         modifier(
@@ -287,6 +289,7 @@ extension View {
                 message: message,
                 style: style,
                 duration: duration,
+                bottomPadding: bottomPadding,
                 onDismiss: onDismiss
             )
         )
