@@ -55,8 +55,6 @@
 		517F60FE2F32581F00A3880C /* Galmuri9.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 517F60FD2F32581F00A3880C /* Galmuri9.ttf */; };
 		518390062E5F36D20083B7F9 /* CommunityWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 518390052E5F36D20083B7F9 /* CommunityWriteView.swift */; };
 		51A0CBD22EE0606600BC8E73 /* AppleSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0CBD12EE0606600BC8E73 /* AppleSignInManager.swift */; };
-		E3EC5FD6021749BE901C08A4 /* NaverSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5A736297FD4AC4A8539CA5 /* NaverSignInManager.swift */; };
-		7B78025CDB724EE58BB680BA /* KakaoSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 602F2FF717F0482DBF68237A /* KakaoSignInManager.swift */; };
 		51A0DAD42F3254E70009F19C /* RecordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0DAD32F3254E70009F19C /* RecordsView.swift */; };
 		51A4EECC2E27D27B0065D460 /* ReviewWriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A4EECB2E27D27B0065D460 /* ReviewWriteView.swift */; };
 		51B64E0C2E68724B00696BDF /* ThemeSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51B64E0B2E68724B00696BDF /* ThemeSelectView.swift */; };
@@ -71,6 +69,8 @@
 		51F384082F3F8A790096FA69 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 51F384072F3F8A790096FA69 /* ComposableArchitecture */; };
 		52E0A0022F5A100100AAA111 /* UIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E0A0012F5A100100AAA111 /* UIComponents.swift */; };
 		788307498A8F48DDA2D7B61A /* ReportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A592C895E87E403989DE11BC /* ReportSheet.swift */; };
+		7B78025CDB724EE58BB680BA /* KakaoSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 602F2FF717F0482DBF68237A /* KakaoSignInManager.swift */; };
+		E3EC5FD6021749BE901C08A4 /* NaverSignInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5A736297FD4AC4A8539CA5 /* NaverSignInManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -143,8 +143,6 @@
 		518390052E5F36D20083B7F9 /* CommunityWriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommunityWriteView.swift; sourceTree = "<group>"; };
 		5190FA062EB24629006A0BD1 /* BantalsonyeondanDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BantalsonyeondanDebug.entitlements; sourceTree = "<group>"; };
 		51A0CBD12EE0606600BC8E73 /* AppleSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInManager.swift; sourceTree = "<group>"; };
-		7B5A736297FD4AC4A8539CA5 /* NaverSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaverSignInManager.swift; sourceTree = "<group>"; };
-		602F2FF717F0482DBF68237A /* KakaoSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KakaoSignInManager.swift; sourceTree = "<group>"; };
 		51A0DAD32F3254E70009F19C /* RecordsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordsView.swift; sourceTree = "<group>"; };
 		51A4EECB2E27D27B0065D460 /* ReviewWriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewWriteView.swift; sourceTree = "<group>"; };
 		51B64E0B2E68724B00696BDF /* ThemeSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSelectView.swift; sourceTree = "<group>"; };
@@ -157,6 +155,8 @@
 		51DF46B02DAFFF3300FA49EB /* CustomSearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSearchBar.swift; sourceTree = "<group>"; };
 		51DF46B22DE733CC00FA49EB /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		52E0A0012F5A100100AAA111 /* UIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIComponents.swift; sourceTree = "<group>"; };
+		602F2FF717F0482DBF68237A /* KakaoSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KakaoSignInManager.swift; sourceTree = "<group>"; };
+		7B5A736297FD4AC4A8539CA5 /* NaverSignInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaverSignInManager.swift; sourceTree = "<group>"; };
 		A592C895E87E403989DE11BC /* ReportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -764,6 +764,7 @@
 		515D6ABE2C5A52F800D6616E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Bantalsonyeondan/BantalsonyeondanDebug.entitlements;
@@ -775,6 +776,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Bantalsonyeondan/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "방탈소년단";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "앱 사용 중 위치 정보가 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -799,6 +801,7 @@
 		515D6ABF2C5A52F800D6616E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Bantalsonyeondan/BantalsonyeondanRelease.entitlements;
@@ -810,6 +813,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Bantalsonyeondan/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "방탈소년단";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "앱 사용 중 위치 정보가 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -972,6 +976,8 @@
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.23.1;
 			};
+			traits = (
+			);
 		};
 /* End XCRemoteSwiftPackageReference section */
 
