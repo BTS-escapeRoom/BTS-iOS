@@ -121,11 +121,11 @@ struct BoardDetailView: View {
             let title = (detailTitle?.isEmpty == false ? detailTitle : nil) ?? (boardTitle ?? "")
 
             let peopleText: String = {
-                if let p = viewStore.detail?.recruit_people ?? viewStore.board?.recruitPeople { return "\(p)명" }
+                if let p = viewStore.detail?.recruitPeople ?? viewStore.board?.recruitPeople { return "\(p)명" }
                 return "-"
             }()
 
-            let escapeDateText: String = Self.formattedEscapeDateStatic(viewStore.detail?.escape_date ?? viewStore.board?.escapeDate) ?? "협의 후 결정"
+            let escapeDateText: String = Self.formattedEscapeDateStatic(viewStore.detail?.escapeDate ?? viewStore.board?.escapeDate) ?? "협의 후 결정"
 
             let isSendEnabled = viewStore.newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
 
@@ -222,13 +222,13 @@ struct BoardDetailView: View {
                                 Text("탈출 일자").font(.caption).foregroundColor(.secondary)
                                 Text(escapeDateText).font(.caption)
                             }
-                            if let contact = viewStore.detail?.contact_method, !contact.isEmpty {
+                            if let contact = viewStore.detail?.contactMethod, !contact.isEmpty {
                                 HStack(spacing: 12) {
                                     Text("연락 방법").font(.caption).foregroundColor(.secondary)
                                     Text(contact).font(.caption)
                                 }
                             }
-                            if let url = viewStore.detail?.contact_url, !url.isEmpty {
+                            if let url = viewStore.detail?.contactUrl, !url.isEmpty {
                                 HStack(spacing: 12) {
                                     Text("연락 링크").font(.caption).foregroundColor(.secondary)
                                     Button {

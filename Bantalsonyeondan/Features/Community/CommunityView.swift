@@ -81,16 +81,7 @@ struct CommunityView: View {
                                 LazyVStack(spacing: 8) {
                                     ForEach(viewStore.boards.indices, id: \.self) { index in
                                         let board = viewStore.boards[index]
-                                        NavigationLink {
-                                            BoardDetailView(                                                 store: StoreOf<BoardDetailFeature>(
-                                                    initialState: BoardDetailFeature.State(boardId: board.id, board: board),
-                                                    reducer: { BoardDetailFeature() }
-                                                ),
-                                                onBoardChanged: {
-                                                    viewStore.send(.onSearchBarEntered(viewStore.searchText))
-                                                }
-                                            )
-                                        } label: {
+                                        NavigationLink(value: board) {
                                             BoardCardView(board: board)
                                         }
                                         .buttonStyle(.plain)
@@ -111,7 +102,18 @@ struct CommunityView: View {
                             .background(Color(UIColor.systemGray6))
                         }
                     }
-                    .onAppear { viewStore.send(CommunityFeature.Action.onLoadNextPage) }
+                    .navigationDestination(for: Board.self) { board in
+                        BoardDetailView(
+                            store: StoreOf<BoardDetailFeature>(
+                                initialState: BoardDetailFeature.State(boardId: board.id, board: board),
+                                reducer: { BoardDetailFeature() }
+                            ),
+                            onBoardChanged: {
+                                viewStore.send(.onSearchBarEntered(viewStore.searchText))
+                            }
+                        )
+                    }
+                    .onAppear { viewStore.send(CommunityFeature.Action.onAppear) }
                     .fullScreenCover(isPresented: viewStore.binding(get: \.showWriteView, send: CommunityFeature.Action.showWriteView)) {
                         viewStore.send(CommunityFeature.Action.onLoadNextPage)
                     } content: {

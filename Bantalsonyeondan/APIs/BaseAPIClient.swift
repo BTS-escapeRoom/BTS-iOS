@@ -140,14 +140,18 @@ extension BaseAPIClientProtocol {
         _ request: URLRequest,
         shouldRetryOnUnauthorized: Bool
     ) async throws -> (Data, HTTPURLResponse) {
+        print("[DEBUG] Executing request to URL: \(request.url?.absoluteString ?? "N/A") with shouldRetryOnUnauthorized: \(shouldRetryOnUnauthorized)")
         let (data, response) = try await URLSession.shared.data(for: request)
+        print("[DEBUG] Received response for URL: \(request.url?.absoluteString ?? "N/A") with shouldRetryOnUnauthorized: \(shouldRetryOnUnauthorized)")
         guard let httpResponse = response as? HTTPURLResponse else {
+            print("[DEBUG] Invalid response type. Expected HTTPURLResponse but got \(type(of: response)).")
             throw URLError(.badServerResponse)
         }
-
+print("[DEBUG] HTTP Status Code: \(httpResponse.statusCode) for URL: \(request.url?.absoluteString ?? "N/A")")
         guard httpResponse.statusCode == 401,
               shouldRetryOnUnauthorized,
               request.value(forHTTPHeaderField: "Authorization") != nil else {
+            print("[DEBUG] No retry needed. Returning response with status code: \(httpResponse.statusCode)")
             return (data, httpResponse)
         }
 

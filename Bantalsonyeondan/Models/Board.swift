@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Board: Decodable, Equatable, Identifiable {
+struct Board: Decodable, Equatable, Identifiable, Hashable {
     let id: Int
     let type: String
     let title: String
@@ -46,11 +46,11 @@ struct BoardDetail: Decodable, Equatable {
     let memberId: Int?
     let memberName: String
     let profileImg: String?
-    let recruit_deadline: String?
-    let escape_date: String?
-    let recruit_people: Int?
-    let contact_url: String?
-    let contact_method: String?
+    let recruitDeadline: String?
+    let escapeDate: String?
+    let recruitPeople: Int?
+    let contactUrl: String?
+    let contactMethod: String?
     let hit: Int
     let reportStatus: String?
     let likeCount: Int

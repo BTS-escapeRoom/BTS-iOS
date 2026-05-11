@@ -18,6 +18,7 @@ struct CommunityFeature: Reducer {
     }
 
     enum Action {
+        case onAppear
         case fetchBoardsResponse(Result<BoardResponse, Error>, requestedPage: Int)
         case onSearchBarEntered(String)
         case onSortOptionSelected(SortOption)
@@ -31,6 +32,11 @@ struct CommunityFeature: Reducer {
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
         switch action {
+        case .onAppear:
+            state.boards = []
+            state.nextPage = 1
+            return .send(.onSearchBarEntered(state.searchText))
+
         case let .onSearchBarEntered(keyword):
             state.searchText = keyword
             state.isLoading = true

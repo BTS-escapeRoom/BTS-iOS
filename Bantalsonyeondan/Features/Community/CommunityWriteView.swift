@@ -61,7 +61,7 @@ struct CommunityWriteView: View {
 
         let resolvedTitle = editingBoard?.title ?? fallbackBoard?.title ?? ""
         let resolvedRecruitCount: String = {
-            if let count = editingBoard?.recruit_people {
+            if let count = editingBoard?.recruitPeople {
                 return String(count)
             }
             if let count = fallbackBoard?.recruitPeople {
@@ -69,10 +69,10 @@ struct CommunityWriteView: View {
             }
             return ""
         }()
-        let resolvedEscapeDateString = editingBoard?.escape_date ?? fallbackBoard?.escapeDate
-        let resolvedDeadlineString = editingBoard?.recruit_deadline ?? fallbackBoard?.recruitDeadline
-        let resolvedContactMethodRaw = editingBoard?.contact_method ?? fallbackBoard?.contactMethod
-        let resolvedContactUrl = editingBoard?.contact_url ?? fallbackBoard?.contactUrl ?? ""
+        let resolvedEscapeDateString = editingBoard?.escapeDate ?? fallbackBoard?.escapeDate
+        let resolvedDeadlineString = editingBoard?.recruitDeadline ?? fallbackBoard?.recruitDeadline
+        let resolvedContactMethodRaw = editingBoard?.contactMethod ?? fallbackBoard?.contactMethod
+        let resolvedContactUrl = editingBoard?.contactUrl ?? fallbackBoard?.contactUrl ?? ""
         let resolvedContent = editingBoard?.description ?? ""
         let resolvedTheme = CommunityWriteView.convertTheme(from: editingBoard?.theme) ?? initialTheme
 
@@ -240,6 +240,7 @@ struct CommunityWriteView: View {
                         }
                         // 날짜 변환
                         let isoFormatter = ISO8601DateFormatter()
+                        isoFormatter.timeZone = TimeZone.current
                         let recruitDeadlineString = deadline != nil ? isoFormatter.string(from: deadline!) : nil
                         let escapeDateString = (escapeDate != nil && !isDateUndecided) ? isoFormatter.string(from: escapeDate!) : nil
                         // contact_url/contact_method 분리
@@ -296,6 +297,7 @@ struct CommunityWriteView: View {
             }
             .navigationTitle(editingBoardId == nil ? "모집 글쓰기" : "모집 글 수정")
             .navigationBarTitleDisplayMode(.inline)
+            .background(Color("FAFAFA").ignoresSafeArea())
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: { dismiss() }) {

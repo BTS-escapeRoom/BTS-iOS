@@ -104,7 +104,7 @@ struct BoardDetailFeature: Reducer {
             case let .success(detail):
                 state.detail = detail
                 state.isMine = isMineBoard(memberId: detail.memberId)
-                state.isRecruitClosed = isClosedRecruit(deadline: detail.recruit_deadline)
+                state.isRecruitClosed = isClosedRecruit(deadline: detail.recruitDeadline)
                 state.isLiked = detail.isLike ?? state.isLiked
                 state.likeCount = detail.likeCount
                 state.errorMessage = nil
