@@ -1,5 +1,6 @@
 import SwiftUI
 import ComposableArchitecture
+import UIKit
 
 struct CommunityWriteView: View {
     private enum ContactMethodType: String, CaseIterable {
@@ -45,6 +46,7 @@ struct CommunityWriteView: View {
     @State private var toastMessage: String? = nil
     @State private var showThemeSelectView: Bool = false
     @State private var selectedTheme: Theme? = nil
+    @FocusState private var isContentEditorFocused: Bool
     let themeStore = Store(initialState: ThemeFeature.State(), reducer: { ThemeFeature() })
     @Environment(\.dismiss) private var dismiss
     let boardApiClient = BoardAPIClient()
@@ -89,6 +91,7 @@ struct CommunityWriteView: View {
 
     var body: some View {
         NavigationView {
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     // Title
@@ -210,6 +213,7 @@ struct CommunityWriteView: View {
                         Text("모집 내용")
                         ZStack(alignment: .topLeading) {
                             TextEditor(text: $content)
+                                .focused($isContentEditorFocused)
                                 .frame(height: 150)
                             if content.isEmpty {
                                 Text("모집 내용을 입력해주세요.")
@@ -292,8 +296,29 @@ struct CommunityWriteView: View {
                             .foregroundColor(.white)
                             .cornerRadius(8)
                     }
+
+                    Color.clear
+                        .frame(height: 5)
+                        .id("community-write-bottom-anchor")
                 }
                 .padding()
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .simultaneousGesture(
+                DragGesture().onChanged { _ in
+                    isContentEditorFocused = false
+                    dismissKeyboard()
+                }
+            )
+            .onChange(of: isContentEditorFocused) { isFocused in
+                guard isFocused else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        proxy.scrollTo("community-write-bottom-anchor", anchor: .bottom)
+                    }
+                }
+            }
             }
             .navigationTitle(editingBoardId == nil ? "모집 글쓰기" : "모집 글 수정")
             .navigationBarTitleDisplayMode(.inline)
@@ -311,6 +336,15 @@ struct CommunityWriteView: View {
                 ThemeSelectView(store: themeStore, selectedTheme: $selectedTheme)
             }
         }
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 
     private static func parseISODate(_ value: String?) -> Date? {

@@ -1,5 +1,6 @@
 import SwiftUI
 import ComposableArchitecture
+import UIKit
 
 private enum ReviewFormTimeType: String, CaseIterable, Identifiable {
     case remaining = "RAMAINING"
@@ -384,30 +385,46 @@ struct ReviewWriteView: View {
                     .id("review-submit-bottom-anchor")
             }
             .padding(16)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .simultaneousGesture(
+            DragGesture().onChanged { _ in
+                isContentEditorFocused = false
+                dismissKeyboard()
             }
-            .onChange(of: isContentEditorFocused) { isFocused in
-                guard isFocused else { return }
-                Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 200_000_000)
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        proxy.scrollTo("review-submit-bottom-anchor", anchor: .bottom)
-                    }
+        )
+        .onChange(of: isContentEditorFocused) { isFocused in
+            guard isFocused else { return }
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    proxy.scrollTo("review-submit-bottom-anchor", anchor: .bottom)
                 }
             }
         }
-        .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if let onCancel {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: onCancel) {
-                        Image(systemName: "chevron.left")
-                            .foregroundStyle(Color("cod_gray"))
-                    }
-                    .disabled(isSubmitting)
+    }
+    .navigationTitle(title)
+    .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+        if let onCancel {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: onCancel) {
+                    Image(systemName: "chevron.left")
+                        .foregroundStyle(Color("cod_gray"))
                 }
+                .disabled(isSubmitting)
             }
         }
+    }
+}
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 
     private func buildDraft() -> ReviewFormDraft {
