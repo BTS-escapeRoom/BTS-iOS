@@ -296,61 +296,15 @@ struct BoardDetailView: View {
                         }
 
                         ForEach(viewStore.comments, id: \.id) { comment in
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack {
-                                    Button {
-                                        if let mid = comment.memberId {
-                                            memberHistoryTarget = MemberHistoryTarget(id: mid, name: comment.memberName)
-                                        }
-                                    } label: {
-                                        if let imgStr = comment.profileImg, let url = URL(string: imgStr) {
-                                            CachedAsyncImage(url: url) { phase in
-                                                switch phase {
-                                                case .success(let image):
-                                                    image.resizable().scaledToFill()
-                                                default:
-                                                    Color.gray.opacity(0.2)
-                                                }
-                                            }
-                                            .frame(width: 32, height: 32)
-                                            .clipShape(Circle())
-                                        } else {
-                                            Circle()
-                                                .fill(Color.gray.opacity(0.2))
-                                                .frame(width: 32, height: 32)
-                                        }
-                                    }
-                                    .buttonStyle(.plain)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(comment.memberName)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    Spacer()
-                                    // 내 댓글이 아닐 때만 신고 버튼
-                                    let isMyComment = comment.memberId == AuthSessionStore.currentSession?.memberId
-                                    if !isMyComment {
-                                        Button {
-                                            reportTargetCommentId = comment.id
-                                            reportDescription = ""
-                                            isShowingCommentReportSheet = true
-                                        } label: {
-                                            Image(systemName: "ellipsis")
-                                                .rotationEffect(.degrees(90))
-                                                .foregroundStyle(Color(UIColor.systemGray))
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 4)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
+                            CommentRowView(
+                                comment: comment,
+                                onDelete: { viewStore.send(.tapDeleteComment(commentId: comment.id)) },
+                                onReport: {
+                                    reportTargetCommentId = comment.id
+                                    reportDescription = ""
+                                    isShowingCommentReportSheet = true
                                 }
-                                Text(comment.comment)
-                                    .font(.body)
-                                    .foregroundColor(.primary)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .padding(.vertical, 8)
-                            Divider()
+                            )
                         }
                     } // 댓글 섹션 end
                 } // VStack end
@@ -517,6 +471,111 @@ struct BoardDetailView: View {
             .navigationTitle("모집 게시판")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { viewStore.send(.onAppear) }
+        }
+    }
+}
+
+private struct CommentRowView: View {
+    let comment: Comment
+    let onDelete: () -> Void
+    let onReport: () -> Void
+    @State private var isShowingActionSheet = false
+    @State private var isShowingDeleteConfirm = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                if let imgStr = comment.profileImg, let url = URL(string: imgStr) {
+                    CachedAsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFill()
+                        default:
+                            Color.gray.opacity(0.2)
+                        }
+                    }
+                    .frame(width: 32, height: 32)
+                    .clipShape(Circle())
+                } else {
+                    Circle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: 32, height: 32)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(comment.memberName)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                Button {
+                    isShowingActionSheet = true
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .rotationEffect(.degrees(90))
+                        .foregroundStyle(Color(UIColor.systemGray))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+                .confirmationDialog("이 댓글을 삭제하시겠어요?", isPresented: $isShowingDeleteConfirm, titleVisibility: .visible) {
+                    Button("삭제", role: .destructive) { onDelete() }
+                    Button("취소", role: .cancel) {}
+                }
+            }
+            Text(comment.comment)
+                .font(.body)
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 8)
+        .overlay(alignment: .bottom) { Divider() }
+        .sheet(isPresented: $isShowingActionSheet) {
+            let isMyComment = comment.memberId == AuthSessionStore.currentSession?.memberId
+            VStack(spacing: 8) {
+                VStack(spacing: 0) {
+                    if isMyComment {
+                        Button {
+                            isShowingActionSheet = false
+                            isShowingDeleteConfirm = true
+                        } label: {
+                            Text("삭제")
+                                .font(.system(size: 18, weight: .regular))
+                                .foregroundStyle(Color.red)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                        }
+                    } else {
+                        Button {
+                            isShowingActionSheet = false
+                            onReport()
+                        } label: {
+                            Text("신고")
+                                .font(.system(size: 18, weight: .regular))
+                                .foregroundStyle(Color.red)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                        }
+                    }
+                }
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                Button {
+                    isShowingActionSheet = false
+                } label: {
+                    Text("닫기")
+                        .font(.system(size: 18, weight: .regular))
+                        .foregroundStyle(Color("cod_gray"))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(16)
+            .presentationDetents([.height(154)])
+            .presentationDragIndicator(.hidden)
         }
     }
 }

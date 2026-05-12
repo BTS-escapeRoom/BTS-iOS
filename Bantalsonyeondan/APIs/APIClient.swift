@@ -131,9 +131,9 @@ struct CommentAPIClient: APIClient {
                           body: ["comment":comment])
     }
     
-    /// DELETE /v1/comments/{commentId}/boards 테마 댓글 삭제
-    func  deleteComments(commentId: String) async throws -> Comment {
-        try await request("comments/\(commentId)/boards")
+    /// DELETE /v1/comments/{commentId} 게시글 댓글 삭제
+    func  deleteComments(commentId: String) async throws -> String {
+        try await request("comments/\(commentId)", method: "DELETE")
     }
     
     /// GET /v1/boards/{boardId}/comments 게시글 댓글 조회

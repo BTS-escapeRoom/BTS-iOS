@@ -57,6 +57,8 @@ struct BoardDetailFeature: Reducer {
         case reportBoardResponse(Result<String, Error>)
         case tapReportComment(commentId: Int, description: String)
         case reportCommentResponse(Result<String, Error>)
+        case tapDeleteComment(commentId: Int)
+        case deleteCommentResponse(Result<Int, Error>)
     }
     
     @Dependency(\.boardAPIClient) var boardAPIClient
@@ -341,6 +343,27 @@ struct BoardDetailFeature: Reducer {
             switch result {
             case .success:
                 state.toastMessage = "신고가 접수되었어요."
+            case let .failure(error):
+                state.errorMessage = error.localizedDescription
+            }
+            return .none
+
+        case let .tapDeleteComment(commentId):
+            return .run { send in
+                do {
+                    _ = try await commentAPIClient.deleteComments(commentId: String(commentId))
+                    await send(.deleteCommentResponse(.success(commentId)))
+                } catch {
+                    await send(.deleteCommentResponse(.failure(error)))
+                }
+            }
+
+        case let .deleteCommentResponse(result):
+            switch result {
+            case let .success(commentId):
+                state.comments.removeAll { $0.id == commentId }
+                if state.commentsTotalCount > 0 { state.commentsTotalCount -= 1 }
+                state.toastMessage = "댓글을 삭제했어요."
             case let .failure(error):
                 state.errorMessage = error.localizedDescription
             }

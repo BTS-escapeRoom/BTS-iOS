@@ -5,6 +5,7 @@ struct ReviewDetailView: View {
     
     let store: StoreOf<ReviewFeature>
     @State private var showWriteFullScreen = false
+    @State private var reviewToEdit: Review? = nil
     
     var body: some View {
         WithViewStore(store, observe: \.self) { viewStore in
@@ -17,7 +18,15 @@ struct ReviewDetailView: View {
                             .foregroundColor(.red)
                     } else if !viewStore.reviews.isEmpty {
                         List(viewStore.reviews, id: \.id) { review in
-                            ReviewRowView(review: review)
+                            ReviewRowView(
+                                review: review,
+                                onDelete: { reviewId in
+                                    viewStore.send(.deleteReview(reviewId: reviewId))
+                                },
+                                onEdit: { review in
+                                    reviewToEdit = review
+                                }
+                            )
                         }
                         .listStyle(PlainListStyle())
                     } else {
@@ -69,6 +78,30 @@ struct ReviewDetailView: View {
                                 }
                             }
                         }
+                        .fullScreenCover(item: $reviewToEdit) { review in
+                            NavigationView {
+                                ReviewWriteView(
+                                    review: review,
+                                    isSubmitting: viewStore.isUpdating,
+                                    onSubmitEdit: { request in
+                                        viewStore.send(.updateReview(reviewId: review.id, request: request))
+                                        reviewToEdit = nil
+                                    },
+                                    onCancel: {
+                                        reviewToEdit = nil
+                                    }
+                                )
+                                .navigationBarTitleDisplayMode(.inline)
+                                .toolbar {
+                                    ToolbarItem(placement: .navigationBarLeading) {
+                                        Button(action: { reviewToEdit = nil }) {
+                                            Image(systemName: "chevron.left")
+                                                .foregroundColor(.black)
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -78,7 +111,11 @@ struct ReviewDetailView: View {
 
 private struct ReviewRowView: View {
     let review: Review
+    var onDelete: ((Int) -> Void)? = nil
+    var onEdit: ((Review) -> Void)? = nil
+    @State private var isShowingActionSheet = false
     @State private var isShowingReportSheet = false
+    @State private var isShowingDeleteConfirm = false
     @State private var reportDescription = ""
     
     // 날짜 포맷 변환 함수
@@ -126,18 +163,21 @@ private struct ReviewRowView: View {
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
-                // 내 리뷰가 아닐 때만 신고 버튼
-                if review.isMyReview != true {
-                    Button {
-                        reportDescription = ""
-                        isShowingReportSheet = true
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .rotationEffect(.degrees(90))
-                            .foregroundStyle(Color(UIColor.systemGray))
-                            .padding(.horizontal, 4)
+                // ... 버튼 → 바텀시트
+                Button {
+                    isShowingActionSheet = true
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .rotationEffect(.degrees(90))
+                        .foregroundStyle(Color(UIColor.systemGray))
+                        .padding(.horizontal, 4)
+                }
+                .buttonStyle(.plain)
+                .confirmationDialog("", isPresented: $isShowingDeleteConfirm, titleVisibility: .hidden) {
+                    Button("삭제", role: .destructive) {
+                        onDelete?(review.id)
                     }
-                    .buttonStyle(.plain)
+                    Button("취소", role: .cancel) {}
                 }
             }
             // 주요 정보
@@ -183,6 +223,67 @@ private struct ReviewRowView: View {
                             .fill(Color.osloGray.opacity(0.05))
                     )
             }
+        }
+        .sheet(isPresented: $isShowingActionSheet) {
+            VStack(spacing: 8) {
+                VStack(spacing: 0) {
+                    if review.isMyReview == true {
+                        Button {
+                            isShowingActionSheet = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                onEdit?(review)
+                            }
+                        } label: {
+                            Text("수정")
+                                .font(.system(size: 18, weight: .regular))
+                                .foregroundStyle(Color("cod_gray"))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                        }
+                        Divider()
+                        Button {
+                            isShowingActionSheet = false
+                            isShowingDeleteConfirm = true
+                        } label: {
+                            Text("삭제")
+                                .font(.system(size: 18, weight: .regular))
+                                .foregroundStyle(Color.red)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                        }
+                    } else {
+                        Button {
+                            isShowingActionSheet = false
+                            reportDescription = ""
+                            isShowingReportSheet = true
+                        } label: {
+                            Text("신고")
+                                .font(.system(size: 18, weight: .regular))
+                                .foregroundStyle(Color.red)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                        }
+                    }
+                }
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                Button {
+                    isShowingActionSheet = false
+                } label: {
+                    Text("닫기")
+                        .font(.system(size: 18, weight: .regular))
+                        .foregroundStyle(Color("cod_gray"))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(16)
+            .presentationDetents([.height(review.isMyReview == true ? 210 : 154)])
+            .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isShowingReportSheet) {
             ReportSheet(description: $reportDescription, title: "리뷰 신고") {
