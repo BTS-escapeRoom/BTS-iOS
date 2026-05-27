@@ -92,14 +92,6 @@ struct ReviewDetailView: View {
                                     }
                                 )
                                 .navigationBarTitleDisplayMode(.inline)
-                                .toolbar {
-                                    ToolbarItem(placement: .navigationBarLeading) {
-                                        Button(action: { reviewToEdit = nil }) {
-                                            Image(systemName: "chevron.left")
-                                                .foregroundColor(.black)
-                                        }
-                                    }
-                                }
                             }
                         }
                     }
