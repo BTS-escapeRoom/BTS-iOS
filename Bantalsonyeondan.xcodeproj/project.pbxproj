@@ -26,7 +26,6 @@
 		515D6AAE2C5A52F800D6616E /* BantalsonyeondanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515D6AAD2C5A52F800D6616E /* BantalsonyeondanTests.swift */; };
 		515D6AB82C5A52F800D6616E /* BantalsonyeondanUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515D6AB72C5A52F800D6616E /* BantalsonyeondanUITests.swift */; };
 		515D6ABA2C5A52F800D6616E /* BantalsonyeondanUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 515D6AB92C5A52F800D6616E /* BantalsonyeondanUITestsLaunchTests.swift */; };
-		516086A32CE4CAEA0094EAC9 /* NicknameSetupedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516086A22CE4CAEA0094EAC9 /* NicknameSetupedView.swift */; };
 		516086A52CE4CB000094EAC9 /* NicknameSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516086A42CE4CB000094EAC9 /* NicknameSetupView.swift */; };
 		516086A92D37E39A0094EAC9 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516086A82D37E39A0094EAC9 /* Theme.swift */; };
 		516086AC2D37E3F00094EAC9 /* HomeFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516086AB2D37E3F00094EAC9 /* HomeFeature.swift */; };
@@ -115,7 +114,6 @@
 		515D6AB72C5A52F800D6616E /* BantalsonyeondanUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BantalsonyeondanUITests.swift; sourceTree = "<group>"; };
 		515D6AB92C5A52F800D6616E /* BantalsonyeondanUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BantalsonyeondanUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		515D6AC62C5A538D00D6616E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		516086A22CE4CAEA0094EAC9 /* NicknameSetupedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NicknameSetupedView.swift; sourceTree = "<group>"; };
 		516086A42CE4CB000094EAC9 /* NicknameSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NicknameSetupView.swift; sourceTree = "<group>"; };
 		516086A82D37E39A0094EAC9 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		516086AB2D37E3F00094EAC9 /* HomeFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeature.swift; sourceTree = "<group>"; };
@@ -349,7 +347,6 @@
 				514A91652EA90B0A009DDE4B /* AppleSignInButton.swift */,
 				515D6A9E2C5A52F700D6616E /* LoginView.swift */,
 				516086A42CE4CB000094EAC9 /* NicknameSetupView.swift */,
-				516086A22CE4CAEA0094EAC9 /* NicknameSetupedView.swift */,
 				51DF46B02DAFFF3300FA49EB /* CustomSearchBar.swift */,
 				52E0A0012F5A100100AAA111 /* UIComponents.swift */,
 				A592C895E87E403989DE11BC /* ReportSheet.swift */,
@@ -569,7 +566,6 @@
 				515292002F8FE1600018DBCB /* MemberHistoryView.swift in Sources */,
 				51619C912D618F3100E8E866 /* StoreInfo.swift in Sources */,
 				51619C8F2D618F2D00E8E866 /* Board.swift in Sources */,
-				516086A32CE4CAEA0094EAC9 /* NicknameSetupedView.swift in Sources */,
 				51C00D042E1E91F0006CCA3C /* ReviewFeature.swift in Sources */,
 				51C542F82DF9AB940064D9F1 /* ThemeDetailView.swift in Sources */,
 				51619C8B2D60820600E8E866 /* Home.swift in Sources */,

@@ -267,53 +267,53 @@ struct NicknameSetupView: View {
     }
 
     private func completedView(viewStore: ViewStoreOf<NicknameSetupFeature>) -> some View {
-        ZStack {
+        VStack(spacing: 0) {
+            Image("icon-launch")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 160)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 80)
+
+            Spacer()
+
+            VStack(spacing: 16) {
+                Text("환영합니다!")
+                    .font(.system(size: 28, weight: .bold))
+
+                Text("\(viewStore.completedMember?.nickname ?? viewStore.nickname)님")
+                    .font(.system(size: 28, weight: .bold))
+
+                Text("방탈소년단과 함께 알찬 방탈출 생활하세요")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+
+            Spacer()
+
+            Button {
+                viewStore.send(.completeTapped)
+            } label: {
+                Text("입장")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(Color("cod_gray"))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 40)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
             Image("nickname_singup_done")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                Image("icon-launch")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 160)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 80)
-
-                Spacer()
-
-                VStack(spacing: 16) {
-                    Text("환영합니다!")
-                        .font(.system(size: 28, weight: .bold))
-
-                    Text("\(viewStore.completedMember?.nickname ?? viewStore.nickname)님")
-                        .font(.system(size: 28, weight: .bold))
-
-                    Text("방탈소년단과 함께 알찬 방탈출 생활 하세요")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.gray)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                }
-
-                Spacer()
-
-                Button {
-                    viewStore.send(.completeTapped)
-                } label: {
-                    Text("입장")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(Color("cod_gray"))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 40)
-            }
-        }
+        )
     }
 
     private func headerTitle(_ title: String, onBack: (() -> Void)? = nil) -> some View {
